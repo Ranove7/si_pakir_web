@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogOut, Wifi, Activity, Zap } from 'lucide-react';
 import ParkingSlotsWidget from './components/parking_slot';
 import TableHistory from './components/table_history';
+import StatisticsWidget from './components/chart';  
 
 export default function DashboardPage({ onLogout }) {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -117,6 +118,10 @@ export default function DashboardPage({ onLogout }) {
           {/*TableHistory */}
           <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <TableHistory history={historyData} />
+          </div>
+
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
+          <StatisticsWidget />
           </div>
 
           {/* Footer */}
