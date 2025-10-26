@@ -62,9 +62,7 @@ export default function LoginPage({ onLogin }) {
             Smart Parking
           </h1>
           <div className="flex items-center justify-center gap-2 text-slate-300">
-            <Sparkles size={16} className="text-yellow-400" />
-            <p className="text-sm">AI-Powered Monitoring System</p>
-            <Sparkles size={16} className="text-yellow-400" />
+            <p className="text-sm">TRINITY V2</p>
           </div>
         </div>
 
