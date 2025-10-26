@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Wifi, Activity, Zap } from 'lucide-react';
 import ParkingSlotsWidget from './components/parking_slot';
+import TableHistory from './components/table_history';
 
 export default function DashboardPage({ onLogout }) {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -20,6 +21,14 @@ export default function DashboardPage({ onLogout }) {
     { id: 5, status: 'kosong', vehicle: null, entryTime: null },
     { id: 6, status: 'terisi', vehicle: 'B 9012 DEF', entryTime: '2025-10-23T10:00:00' }
   ]);
+
+  const historyData = [
+    { id: 1, slot: "A1", vehicle: "N 1234 AB", entryTime: "08:00", exitTime: "09:30", duration: "1j 30m", status: "Parkir" },
+    { id: 2, slot: "B2", vehicle: "P 9876 XY", entryTime: "07:45", exitTime: "08:10", duration: "25m", status: "Selesai" },
+    { id: 3, slot: "C3", vehicle: "E 4421 OP", entryTime: "09:10", exitTime: "10:00", duration: "50m", status: "Selesai" },
+    { id: 4, slot: "A2", vehicle: "L 9911 QR", entryTime: "10:05", exitTime: "-", duration: "-", status: "Parkir" },
+    { id: 5, slot: "B1", vehicle: "P 7777 ZZ", entryTime: "07:30", exitTime: "09:00", duration: "1j 30m", status: "Selesai" }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 relative overflow-hidden">
@@ -103,6 +112,11 @@ export default function DashboardPage({ onLogout }) {
           {/* Parking Slots Widget */}
           <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <ParkingSlotsWidget parkingSlots={parkingSlots} />
+          </div>
+
+          {/*TableHistory */}
+          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <TableHistory history={historyData} />
           </div>
 
           {/* Footer */}
