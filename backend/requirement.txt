@@ -1,6 +1,0 @@
-fastapi             # Framework backend Python untuk membuat API
-uvicorn             # ASGI server untuk menjalankan FastAPI
-python-multipart    # Mendukung upload file/image dari frontend atau ESP32-CAM
-ultralytics         # Library YOLOv8 (deteksi objek)
-opencv-python       # Untuk manipulasi gambar (resize, crop, overlay)
-pillow              # Library tambahan untuk manipulasi gambar (PIL)
