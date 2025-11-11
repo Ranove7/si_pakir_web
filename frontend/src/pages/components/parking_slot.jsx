@@ -26,12 +26,20 @@ export default function ParkingSlotsWidget({ parkingSlots = [] }) {
 
   return (
     <div className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10 shadow-2xl">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2">
-            Status Slot Parkir
-          </h2>
-          <p className="text-slate-400 text-sm">Real-time monitoring system</p>
+        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500 rounded-xl blur-lg opacity-50"></div>
+            <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl">
+              <Car className="text-white" size={24} />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+              Status Slot Parkir
+            </h2>
+            <p className="text-slate-400 text-sm">Monitor slot real-time</p>
+          </div>
         </div>
         <div className="flex gap-4">
           <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-xl border border-green-500/20">
@@ -88,9 +96,6 @@ export default function ParkingSlotsWidget({ parkingSlots = [] }) {
               {/* Vehicle Info */}
               {slot.status === 'terisi' && (
                 <div className="w-full space-y-2 animate-fade-in">
-                  <div className="bg-black/20 backdrop-blur-sm rounded-lg p-2 border border-white/10">
-                    <p className="text-white/90 text-xs font-mono text-center">{slot.vehicle}</p>
-                  </div>
                   <div className="flex items-center justify-center gap-2 text-white/70 text-xs bg-black/20 backdrop-blur-sm rounded-lg p-2 border border-white/10">
                     <Clock size={14} className="text-red-400" />
                     <span className="font-semibold">{formatTime(slot.entryTime)}</span>

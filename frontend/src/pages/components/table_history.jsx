@@ -25,9 +25,9 @@ export default function HistoryWidget({ history = [] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-xl z-10">
             <tr className="border-b border-white/10">
               <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
                 <div className="flex items-center gap-2">
@@ -38,37 +38,19 @@ export default function HistoryWidget({ history = [] }) {
               <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  Slot
+                  Kode Parkir
                 </div>
               </th>
               <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                  Plat Nomor
+                  <AlertCircle size={14} className="text-purple-400" />
+                  Aktivitas
                 </div>
               </th>
               <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-yellow-400" />
-                  Waktu Masuk
-                </div>
-              </th>
-              <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Clock size={14} className="text-orange-400" />
-                  Waktu Keluar
-                </div>
-              </th>
-              <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Timer size={14} className="text-pink-400" />
-                  Durasi
-                </div>
-              </th>
-              <th className="text-left py-4 px-6 text-slate-300 font-bold text-sm uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <AlertCircle size={14} className="text-cyan-400" />
-                  Status
+                  Waktu
                 </div>
               </th>
             </tr>
@@ -95,48 +77,31 @@ export default function HistoryWidget({ history = [] }) {
                   </div>
                 </td>
                 <td className="py-5 px-6">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/30 backdrop-blur-sm">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                    <span className="text-white font-mono font-bold">{record.vehicle}</span>
-                  </div>
+                  {record.activity === 'parkir_masuk' ? (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30 backdrop-blur-sm shadow-lg shadow-green-500/20">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-green-400 rounded-full blur-sm"></div>
+                        <CheckCircle className="relative text-green-400" size={16} />
+                      </div>
+                      <span className="text-green-300 font-bold text-sm">Masuk</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl border border-red-500/30 backdrop-blur-sm shadow-lg shadow-red-500/20">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-red-400 rounded-full blur-sm"></div>
+                        <AlertCircle className="relative text-red-400" size={16} />
+                      </div>
+                      <span className="text-red-300 font-bold text-sm">Keluar</span>
+                    </div>
+                  )}
                 </td>
                 <td className="py-5 px-6">
                   <div className="flex items-center gap-2 text-slate-300">
                     <div className="p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                       <Clock size={16} className="text-yellow-400" />
                     </div>
-                    <span className="font-medium">{record.entryTime}</span>
+                    <span className="font-medium">{new Date(record.timestamp).toLocaleString('id-ID')}</span>
                   </div>
-                </td>
-                <td className="py-5 px-6">
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                      <Clock size={16} className="text-orange-400" />
-                    </div>
-                    <span className="font-medium">{record.exitTime}</span>
-                  </div>
-                </td>
-                <td className="py-5 px-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-500/10 rounded-lg border border-pink-500/20">
-                    <Timer size={16} className="text-pink-400" />
-                    <span className="text-pink-300 font-bold">{record.duration}</span>
-                  </div>
-                </td>
-                <td className="py-5 px-6">
-                  {record.status === 'Parkir' ? (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl border border-blue-500/30 backdrop-blur-sm shadow-lg shadow-blue-500/20">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-blue-400 rounded-full blur-sm"></div>
-                        <AlertCircle className="relative text-blue-400" size={16} />
-                      </div>
-                      <span className="text-blue-300 font-bold text-sm">{record.status}</span>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-500/20 to-slate-500/20 rounded-xl border border-gray-500/30 backdrop-blur-sm">
-                      <CheckCircle className="text-gray-400" size={16} />
-                      <span className="text-gray-300 font-bold text-sm">{record.status}</span>
-                    </div>
-                  )}
                 </td>
               </tr>
             ))}

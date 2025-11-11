@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, Enum, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from services.database_service import Base  # pakai Base global
 from datetime import datetime
-
-Base = declarative_base()
 
 class SlotModel(Base):
     __tablename__ = "parkir_slots"
