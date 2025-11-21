@@ -2,77 +2,218 @@ import cv2
 from ultralytics import YOLO
 from services.slot_service import update_slot_status
 from services.history_service import add_history
-from config import YOLO_MODEL_PATH, DETECTION_INTERVAL
+from config import (
+    YOLO_MODEL_PATH,
+    DETECTION_INTERVAL,
+    CONFIDENCE_THRESHOLD,
+    SLOT_MAPPING,
+    SKIP_FRAMES
+)
 import time
+
+TARGET_WIDTH = 1920
+TARGET_HEIGHT = 1080
+
+# ✅ FIXED: Class ID Mobil yang sudah dikonfirmasi
+CAR_CLASS_ID = 0 
 
 class YoloService:
     def __init__(self):
+        print("🔄 Loading YOLO model...")
         self.model = YOLO(YOLO_MODEL_PATH)
+        self.model.fuse()
         self.cache_status = {}
+        self.slot_mapping = SLOT_MAPPING
+        # Inisialisasi cache status awal
+        for kode in SLOT_MAPPING.keys():
+            self.cache_status[kode] = 'kosong'
 
-        # Mapping slot: kode_slot -> bounding box (x1, y1, x2, y2)
-        # 3 kiri (A1-A3), 3 kanan (A4-A6)
-        self.slot_mapping = {
-            "A1": (50, 50, 150, 150),
-            "A2": (50, 180, 150, 280),
-            "A3": (50, 310, 150, 410),
-            "A4": (490, 50, 590, 150),
-            "A5": (490, 180, 590, 280),
-            "A6": (490, 310, 590, 410),
-        }
+        print("✅ YOLO model loaded!")
+        
+        # Stabilizer untuk mencegah flicker
+        self.detection_buffer = {kode: [] for kode in SLOT_MAPPING.keys()}
+        self.BUFFER_SIZE = 3 
 
-    def analyze_frame(self, frame):
-        """
-        Mendeteksi status slot berdasarkan bounding box YOLO dan class label.
-        class: 0 = kosong, 1 = terisi
-        """
-        results = self.model(frame)[0]
+    def calculate_iou(self, box1, box2):
+        """Intersection over Union (IoU)"""
+        x1_1, y1_1, x2_1, y2_1 = box1
+        x1_2, y1_2, x2_2, y2_2 = box2
+        
+        # Intersection
+        x1_i = max(x1_1, x1_2)
+        y1_i = max(y1_1, y1_2)
+        x2_i = min(x2_1, x2_2)
+        y2_i = min(y2_1, y2_2)
+        
+        if x2_i < x1_i or y2_i < y1_i:
+            return 0.0
+        
+        intersection = (x2_i - x1_i) * (y2_i - y1_i)
+        
+        # Union
+        area1 = (x2_1 - x1_1) * (y2_1 - y1_1)
+        area2 = (x2_2 - x1_2) * (y2_2 - y1_2)
+        union = area1 + area2 - intersection
+        
+        return intersection / union if union > 0 else 0.0
+
+    def calculate_overlap_with_slot(self, detection_box, slot_box):
+        """Hitung persentase area slot yang tertutup mobil"""
+        x1_1, y1_1, x2_1, y2_1 = detection_box
+        x1_2, y1_2, x2_2, y2_2 = slot_box
+        
+        # Intersection
+        x1_i = max(x1_1, x1_2)
+        y1_i = max(y1_1, y1_2)
+        x2_i = min(x2_1, x2_2)
+        y2_i = min(y2_1, y2_2)
+        
+        if x2_i < x1_i or y2_i < y1_i:
+            return 0.0
+        
+        intersection = (x2_i - x1_i) * (y2_i - y1_i)
+        slot_area = (x2_2 - x1_2) * (y2_2 - y1_2)
+        
+        return intersection / slot_area if slot_area > 0 else 0.0
+
+    def analyze_slots(self, results):
+        """Algoritma deteksi slot"""
         status_dict = {}
+        detected_boxes = []
+
+        if len(results.boxes) > 0:
+            for box, cls, conf in zip(results.boxes.xyxy, results.boxes.cls, results.boxes.conf):
+                if int(cls.item()) == CAR_CLASS_ID: 
+                    detected_boxes.append({
+                        'box': box.cpu().numpy(),
+                        'conf': conf.item()
+                    })
 
         for kode, (x1, y1, x2, y2) in self.slot_mapping.items():
+            slot_box = (x1, y1, x2, y2)
+            
+            best_iou = 0.0
+            best_overlap = 0.0
             detected = False
-            for box, cls in zip(results.boxes.xyxy, results.boxes.cls):
-                bx1, by1, bx2, by2 = box
-                # cek overlap dengan slot
-                if bx2 > x1 and bx1 < x2 and by2 > y1 and by1 < y2:
-                    # hanya class 1 (terisi) dianggap terisi
-                    if int(cls) == 1:
-                        detected = True
-                        break
-            status_dict[kode] = "terisi" if detected else "kosong"
+
+            for det in detected_boxes:
+                det_box = tuple(det['box'])
+                
+                iou = self.calculate_iou(det_box, slot_box)
+                best_iou = max(best_iou, iou)
+                
+                overlap = self.calculate_overlap_with_slot(det_box, slot_box)
+                best_overlap = max(best_overlap, overlap)
+                
+                # THRESHOLD: IoU > 0.3 atau Overlap > 0.4
+                if iou > 0.3 or overlap > 0.4:
+                    detected = True
+                    break
+
+            status_dict[kode] = {
+                'status': 'terisi' if detected else 'kosong',
+                'iou': round(best_iou, 3),
+                'overlap': round(best_overlap, 3)
+            }
 
         return status_dict
 
+    def stabilize_status(self, kode, new_status):
+        """Stabilizer untuk mencegah LED flicker"""
+        buffer = self.detection_buffer[kode]
+        buffer.append(new_status)
+        
+        if len(buffer) > self.BUFFER_SIZE:
+            buffer.pop(0)
+        
+        if len(buffer) == self.BUFFER_SIZE:
+            terisi_count = sum(1 for s in buffer if s == 'terisi')
+            if terisi_count >= 2: 
+                return 'terisi'
+            else:
+                return 'kosong'
+        
+        return self.cache_status.get(kode, 'kosong')
+
     def run(self):
-        cap = cv2.VideoCapture("http://192.168.1.38:81/stream")  # ubah sesuai kamera
+        print("🎥 Opening webcam...")
+        cap = cv2.VideoCapture(0)
+
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, TARGET_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, TARGET_HEIGHT)
+
+        if not cap.isOpened():
+            print("❌ Failed to open webcam")
+            return
+
+        frame_count = 0
+        fps_time = time.time()
+        fps_counter = 0
+
         while True:
             ret, frame = cap.read()
             if not ret:
+                print("⚠️ Failed to read frame")
+                time.sleep(1) 
                 continue
 
-            # Jalankan YOLO inference
-            results = self.model(frame)
-            annotated_frame = results[0].plot()
+            frame_count += 1
+            if frame_count % SKIP_FRAMES != 0:
+                continue
 
-            # Analisis tiap slot
-            detected_slots = self.analyze_frame(frame)
-            for kode, status in detected_slots.items():
-                last_status = self.cache_status.get(kode)
-                if last_status != status:
-                    aktivitas = "parkir_masuk" if status == "terisi" else "parkir_keluar"
-                    update_slot_status(kode, status)
+            frame = cv2.resize(frame, (TARGET_WIDTH, TARGET_HEIGHT))
+
+            results = self.model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)[0]
+            detected_slots = self.analyze_slots(results)
+
+            # ✅ Update status dengan stabilizer (Logic utama)
+            for kode, data in detected_slots.items():
+                raw_status = data['status']
+                stable_status = self.stabilize_status(kode, raw_status)
+                
+                old_status = self.cache_status.get(kode)
+                
+                if old_status != stable_status:
+                    aktivitas = "parkir_masuk" if stable_status == "terisi" else "parkir_keluar"
+                    update_slot_status(kode, stable_status)
                     add_history(kode, aktivitas)
-                    self.cache_status[kode] = status
+                    self.cache_status[kode] = stable_status # Cache di-update di sini!
+                    
+                    print(f"♻️ {kode}: {old_status} → {stable_status} | IoU:{data['iou']} Overlap:{data['overlap']}")
 
-                # Gambar kotak slot di frame
+            annotated = results.plot()
+
+            # 🖼️ FIXED: Draw slot boxes (Sinkronisasi Visual)
+            for kode, data in detected_slots.items():
                 x1, y1, x2, y2 = self.slot_mapping[kode]
-                color = (0, 0, 255) if status == "terisi" else (0, 255, 0)  # merah jika terisi, hijau jika kosong
-                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(annotated_frame, kode, (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                
+                # 🛑 GANTI: Ambil status STABIL/CACHE untuk warna dan teks!
+                current_stable_status = self.cache_status.get(kode, 'kosong') 
+                
+                # Tentukan warna dan teks berdasarkan status STABIL
+                color = (0, 0, 255) if current_stable_status == "terisi" else (0, 255, 0) # Merah/Biru vs Hijau
+                status_text = "TERISI" if current_stable_status == "terisi" else "KOSONG"
 
-            # Tampilkan frame
-            cv2.imshow("YOLO Parking Camera", annotated_frame)
+                # Rectangle slot
+                cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+                
+                # Label dengan info IoU
+                label = f"{kode} - IoU:{data['iou']}"
+                cv2.putText(annotated, label, (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                
+                # Teks Status
+                cv2.putText(annotated, status_text, (x1, y2 + 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+            fps_counter += 1
+            if time.time() - fps_time > 1:
+                print(f"📊 FPS: {fps_counter}")
+                fps_counter = 0
+                fps_time = time.time()
+
+            cv2.imshow("YOLO Parking Monitor (Fixed Plotting)", annotated)
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
@@ -81,7 +222,6 @@ class YoloService:
         cap.release()
         cv2.destroyAllWindows()
 
-# ⬇️ Jalankan langsung
+
 if __name__ == "__main__":
-    yolo = YoloService()
-    yolo.run()
+    YoloService().run()
