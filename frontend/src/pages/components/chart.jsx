@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -9,32 +9,43 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Filter, TrendingUp, BarChart3 } from "lucide-react";
+import { Filter, TrendingUp, BarChart3, Loader2 } from "lucide-react";
+import { getWeeklyStats, getMonthlyStats } from "../../services/chart_service";
 
 export default function StatisticsWidget() {
-  // Data contoh: total parkir, masuk, keluar (bisa kamu ganti pakai data real dari backend)
-  const weeklyData = [
-    { day: "Senin", total: 40, masuk: 25, keluar: 15 },
-    { day: "Selasa", total: 55, masuk: 30, keluar: 25 },
-    { day: "Rabu", total: 35, masuk: 20, keluar: 15 },
-    { day: "Kamis", total: 50, masuk: 28, keluar: 22 },
-    { day: "Jumat", total: 65, masuk: 40, keluar: 25 },
-    { day: "Sabtu", total: 30, masuk: 15, keluar: 15 },
-    { day: "Minggu", total: 20, masuk: 10, keluar: 10 },
-  ];
-
-  const monthlyData = [
-    { day: "Minggu 1", total: 230, masuk: 130, keluar: 100 },
-    { day: "Minggu 2", total: 270, masuk: 150, keluar: 120 },
-    { day: "Minggu 3", total: 250, masuk: 140, keluar: 110 },
-    { day: "Minggu 4", total: 280, masuk: 160, keluar: 120 },
-  ];
-
-  // State filter
   const [filter, setFilter] = useState("mingguan");
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Tentukan data berdasarkan filter
-  const chartData = filter === "mingguan" ? weeklyData : monthlyData;
+  // Fetch data ketika filter berubah
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let data;
+        if (filter === "mingguan") {
+          data = await getWeeklyStats();
+        } else {
+          data = await getMonthlyStats();
+        }
+        setChartData(data);
+      } catch (err) {
+        setError("Gagal mengambil data statistik");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filter]);
+
+  // Hitung total
+  const totalParkir = chartData.reduce((sum, item) => sum + (item.total || 0), 0);
+  const totalMasuk = chartData.reduce((sum, item) => sum + (item.masuk || 0), 0);
+  const totalKeluar = chartData.reduce((sum, item) => sum + (item.keluar || 0), 0);
 
   return (
     <div className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10 shadow-2xl transition-all duration-500 hover:shadow-indigo-500/20">
@@ -69,6 +80,7 @@ export default function StatisticsWidget() {
         </div>
       </div>
 
+      {/* Summary Cards */}
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 border border-indigo-500/30 rounded-xl p-4 backdrop-blur-sm hover:scale-105 transition-transform">
           <div className="flex items-center justify-between mb-2">
@@ -76,7 +88,7 @@ export default function StatisticsWidget() {
             <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
           </div>
           <p className="text-3xl font-black text-indigo-300">
-            {chartData.reduce((sum, item) => sum + item.total, 0)}
+            {loading ? "..." : totalParkir}
           </p>
         </div>
 
@@ -86,7 +98,7 @@ export default function StatisticsWidget() {
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </div>
           <p className="text-3xl font-black text-green-300">
-            {chartData.reduce((sum, item) => sum + item.masuk, 0)}
+            {loading ? "..." : totalMasuk}
           </p>
         </div>
 
@@ -96,87 +108,79 @@ export default function StatisticsWidget() {
             <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
           </div>
           <p className="text-3xl font-black text-red-300">
-            {chartData.reduce((sum, item) => sum + item.keluar, 0)}
+            {loading ? "..." : totalKeluar}
           </p>
         </div>
       </div>
 
+      {/* Chart Area */}
       <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
-            <XAxis 
-              dataKey="day" 
-              stroke="#94a3b8" 
-              style={{ fontSize: '12px', fontWeight: '600' }}
-            />
-            <YAxis 
-              stroke="#94a3b8" 
-              style={{ fontSize: '12px', fontWeight: '600' }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(15, 23, 42, 0.95)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                borderRadius: "12px",
-                color: "white",
-                backdropFilter: "blur(12px)",
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-              }}
-              itemStyle={{
-                color: "white",
-                fontWeight: "600",
-              }}
-              labelStyle={{
-                color: "#e2e8f0",
-                fontWeight: "bold",
-                marginBottom: "8px",
-              }}
-            />
-            <Legend 
-              wrapperStyle={{ 
-                color: "#cbd5e1",
-                fontWeight: "600",
-                paddingTop: "20px",
-              }} 
-            />
-            <Bar
-              dataKey="total"
-              fill="url(#totalColor)"
-              radius={[8, 8, 0, 0]}
-              name="Total Parkir"
-            />
-            <Bar
-              dataKey="masuk"
-              fill="url(#masukColor)"
-              radius={[8, 8, 0, 0]}
-              name="Parkir Masuk"
-            />
-            <Bar
-              dataKey="keluar"
-              fill="url(#keluarColor)"
-              radius={[8, 8, 0, 0]}
-              name="Parkir Keluar"
-            />
+        {loading ? (
+          <div className="flex items-center justify-center h-[350px]">
+            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+            <span className="ml-3 text-slate-400">Memuat data...</span>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-[350px]">
+            <span className="text-red-400">{error}</span>
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-[350px]">
+            <span className="text-slate-400">Tidak ada data untuk ditampilkan</span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" opacity={0.3} />
+              <XAxis 
+                dataKey="day" 
+                stroke="#94a3b8" 
+                style={{ fontSize: '12px', fontWeight: '600' }}
+              />
+              <YAxis 
+                stroke="#94a3b8" 
+                style={{ fontSize: '12px', fontWeight: '600' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(15, 23, 42, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  color: "white",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                }}
+                itemStyle={{ color: "white", fontWeight: "600" }}
+                labelStyle={{ color: "#e2e8f0", fontWeight: "bold", marginBottom: "8px" }}
+              />
+              <Legend 
+                wrapperStyle={{ 
+                  color: "#cbd5e1",
+                  fontWeight: "600",
+                  paddingTop: "20px",
+                }} 
+              />
+              <Bar dataKey="total" fill="url(#totalColor)" radius={[8, 8, 0, 0]} name="Total Parkir" />
+              <Bar dataKey="masuk" fill="url(#masukColor)" radius={[8, 8, 0, 0]} name="Parkir Masuk" />
+              <Bar dataKey="keluar" fill="url(#keluarColor)" radius={[8, 8, 0, 0]} name="Parkir Keluar" />
 
-            <defs>
-              <linearGradient id="totalColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity={0.3} />
-              </linearGradient>
-
-              <linearGradient id="masukColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity={0.3} />
-              </linearGradient>
-
-              <linearGradient id="keluarColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.3} />
-              </linearGradient>
-            </defs>
-          </BarChart>
-        </ResponsiveContainer>
+              <defs>
+                <linearGradient id="totalColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0.3} />
+                </linearGradient>
+                <linearGradient id="masukColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.3} />
+                </linearGradient>
+                <linearGradient id="keluarColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 text-sm">
