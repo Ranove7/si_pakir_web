@@ -136,92 +136,27 @@ class YoloService:
         return self.cache_status.get(kode, 'kosong')
 
     def run(self):
-        print("🎥 Opening webcam...")
-        cap = cv2.VideoCapture(0)
-
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, TARGET_WIDTH)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, TARGET_HEIGHT)
-
-        if not cap.isOpened():
-            print("❌ Failed to open webcam")
-            return
-
-        frame_count = 0
-        fps_time = time.time()
-        fps_counter = 0
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                print("⚠️ Failed to read frame")
-                time.sleep(1) 
-                continue
-
-            frame_count += 1
-            if frame_count % SKIP_FRAMES != 0:
-                continue
-
-            frame = cv2.resize(frame, (TARGET_WIDTH, TARGET_HEIGHT))
-
-            results = self.model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)[0]
-            detected_slots = self.analyze_slots(results)
-
-            # ✅ Update status dengan stabilizer (Logic utama)
-            for kode, data in detected_slots.items():
-                raw_status = data['status']
-                stable_status = self.stabilize_status(kode, raw_status)
-                
-                old_status = self.cache_status.get(kode)
-                
-                if old_status != stable_status:
-                    aktivitas = "parkir_masuk" if stable_status == "terisi" else "parkir_keluar"
-                    update_slot_status(kode, stable_status)
-                    add_history(kode, aktivitas)
-                    self.cache_status[kode] = stable_status # Cache di-update di sini!
-                    
-                    print(f"♻️ {kode}: {old_status} → {stable_status} | IoU:{data['iou']} Overlap:{data['overlap']}")
-
-            annotated = results.plot()
-
-            # 🖼️ FIXED: Draw slot boxes (Sinkronisasi Visual)
-            for kode, data in detected_slots.items():
-                x1, y1, x2, y2 = self.slot_mapping[kode]
-                
-                # 🛑 GANTI: Ambil status STABIL/CACHE untuk warna dan teks!
-                current_stable_status = self.cache_status.get(kode, 'kosong') 
-                
-                # Tentukan warna dan teks berdasarkan status STABIL
-                color = (0, 0, 255) if current_stable_status == "terisi" else (0, 255, 0) # Merah/Biru vs Hijau
-                status_text = "TERISI" if current_stable_status == "terisi" else "KOSONG"
-
-                # Rectangle slot
-                cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-                
-                # Label dengan info IoU
-                label = f"{kode} - IoU:{data['iou']}"
-                cv2.putText(annotated, label, (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-                
-                # Teks Status
-                cv2.putText(annotated, status_text, (x1, y2 + 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-            fps_counter += 1
-            if time.time() - fps_time > 1:
-                print(f"📊 FPS: {fps_counter}")
-                fps_counter = 0
-                fps_time = time.time()
-
-            cv2.imshow("YOLO Parking Monitor (Fixed Plotting)", annotated)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-            time.sleep(DETECTION_INTERVAL)
-
-        cap.release()
-        cv2.destroyAllWindows()
+        """
+        ⚠️ PERINGATAN: Method ini TIDAK DIGUNAKAN lagi!
+        
+        Streaming kamera sekarang 100% dilakukan oleh camera_route.py
+        File ini hanya untuk import class YoloService jika diperlukan.
+        
+        Jika Anda menjalankan python yolo_service.py, tidak ada yang terjadi.
+        """
+        print("=" * 60)
+        print("⚠️  PERINGATAN: yolo_service.py tidak boleh dijalankan langsung!")
+        print("=" * 60)
+        print("📌 Streaming kamera sekarang 100% di-handle oleh camera_route.py")
+        print("📌 Untuk menjalankan aplikasi, gunakan:")
+        print("   python main.py")
+        print("=" * 60)
+        return
 
 
 if __name__ == "__main__":
-    YoloService().run()
+    print("\n🚫 ERROR: Jangan jalankan file ini langsung!\n")
+    print("✅ Cara yang benar:")
+    print("   1. Jalankan: python main.py")
+    print("   2. Backend akan streaming otomatis via /camera/feed")
+    print("   3. Frontend akan consume stream tersebut\n")

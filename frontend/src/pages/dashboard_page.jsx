@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { LogOut, Wifi, Activity, Zap } from "lucide-react";
+import { LogOut, Wifi, Activity } from "lucide-react";
 import ParkingSlotsWidget from "./components/parking_slot";
 import TableHistory from "./components/table_history";
 import StatisticsWidget from "./components/chart";
+import WebcamViewer from "./components/webcam_viewer";
 import { getSlots } from "../services/slot_service";
 import { getHistory } from "../services/history_service";
 
@@ -10,7 +11,9 @@ export default function DashboardPage({ onLogout }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [parkingSlots, setParkingSlots] = useState([]);
   const [history, setHistory] = useState([]);
+  const [isConnected, setIsConnected] = useState(true);
 
+  // ✅ Update clock setiap detik
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -18,30 +21,55 @@ export default function DashboardPage({ onLogout }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch parking slots dari backend
+  // ✅ Fetch parking slots dengan auto-refresh REAL-TIME (setiap 2 detik)
   useEffect(() => {
     const fetchSlots = async () => {
-      const slots = await getSlots();
-      setParkingSlots(slots);
+      try {
+        const slots = await getSlots();
+        if (slots && slots.length > 0) {
+          setParkingSlots(slots);
+          setIsConnected(true);
+          console.log("✅ Slots updated:", slots.length, "slots");
+        } else {
+          console.warn("⚠️ No slots data received");
+          setIsConnected(false);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching slots:", error);
+        setIsConnected(false);
+      }
     };
 
+    // Fetch immediately
     fetchSlots();
 
-    // Optional: refresh otomatis setiap 10 detik
-    const interval = setInterval(fetchSlots, 10000);
+    // ✅ Auto-refresh setiap 2 DETIK untuk real-time update
+    const interval = setInterval(fetchSlots, 2000);
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch history dari backend
+  // ✅ Fetch history dengan auto-refresh (setiap 3 detik)
   useEffect(() => {
-    const fetchHistory = async () => {
-      const data = await getHistory();
-      setHistory(data);
+    const fetchHistoryData = async () => {
+      try {
+        const data = await getHistory();
+        if (data && data.length > 0) {
+          setHistory(data);
+          console.log("✅ History updated:", data.length, "records");
+        }
+      } catch (error) {
+        console.error("❌ Error fetching history:", error);
+      }
     };
-    fetchHistory();
+
+    // Fetch immediately
+    fetchHistoryData();
+
+    // Auto-refresh setiap 3 detik
+    const interval = setInterval(fetchHistoryData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 relative overflow-hidden">
       {/* Animated Background */}
@@ -87,13 +115,17 @@ export default function DashboardPage({ onLogout }) {
                   </h1>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-slate-400 text-sm"></div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${
+                      isConnected 
+                        ? "bg-green-500/10 border-green-500/20" 
+                        : "bg-red-500/10 border-red-500/20"
+                    }`}>
                       <Wifi
                         size={14}
-                        className="text-green-400 animate-pulse"
+                        className={`${isConnected ? "text-green-400" : "text-red-400"} animate-pulse`}
                       />
-                      <span className="text-green-300 text-xs font-semibold">
-                        Connected
+                      <span className={`${isConnected ? "text-green-300" : "text-red-300"} text-xs font-semibold`}>
+                        {isConnected ? "Connected" : "Disconnected"}
                       </span>
                     </div>
                   </div>
@@ -134,6 +166,14 @@ export default function DashboardPage({ onLogout }) {
             </div>
           </div>
 
+          {/* ✅ WEBCAM VIEWER */}
+          <div
+            className="mb-8 animate-fade-in-up"
+            style={{ animationDelay: "0.05s" }}
+          >
+            <WebcamViewer />
+          </div>
+
           {/* Parking Slots Widget */}
           <div
             className="mb-8 animate-fade-in-up"
@@ -142,7 +182,7 @@ export default function DashboardPage({ onLogout }) {
             <ParkingSlotsWidget parkingSlots={parkingSlots} />
           </div>
 
-          {/*TableHistory */}
+          {/* TableHistory */}
           <div
             className="mb-8 animate-fade-in-up"
             style={{ animationDelay: "0.2s" }}
@@ -150,9 +190,10 @@ export default function DashboardPage({ onLogout }) {
             <TableHistory history={history} />
           </div>
 
+          {/* Statistics Widget */}
           <div
             className="mb-8 animate-fade-in-up"
-            style={{ animationDelay: "0.05s" }}
+            style={{ animationDelay: "0.25s" }}
           >
             <StatisticsWidget />
           </div>
@@ -160,9 +201,9 @@ export default function DashboardPage({ onLogout }) {
           {/* Footer */}
           <div className="text-center backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className={`w-2 h-2 ${isConnected ? "bg-green-400" : "bg-red-400"} rounded-full animate-pulse`}></div>
               <p className="text-slate-400 text-sm">
-                System Running • Last Update:{" "}
+                System {isConnected ? "Running" : "Disconnected"} • Last Update:{" "}
                 {currentTime.toLocaleTimeString("id-ID")}
               </p>
             </div>

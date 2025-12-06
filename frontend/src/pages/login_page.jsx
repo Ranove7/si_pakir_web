@@ -176,7 +176,7 @@ export default function LoginPage({ onLogin }) {
         {/* Footer */}
         <div className="mt-8 text-center animate-fade-in">
           <p className="text-slate-400 text-sm">
-            Powered by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 font-semibold">YOLO & ESP32-CAM</span>
+            Powered by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 font-semibold">YOLO & WEBCAM</span>
           </p>
           <p className="text-slate-500 text-xs mt-2">
             © 2025 Smart Parking System. All rights reserved.

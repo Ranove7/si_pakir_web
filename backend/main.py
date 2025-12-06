@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.slot_route import router as slot_router
 from routes.history_route import router as history_router
 from routes.esp_route import router as esp_router
-from routes.chart_route import router as chart_router  # ✅ Import baru untuk chart
+from routes.chart_route import router as chart_router
+from routes.camera_route import router as camera_router  # ✅ TAMBAHAN BARU
 import threading
 from services.yolo_service import YoloService
 
@@ -22,7 +23,8 @@ app.add_middleware(
 app.include_router(slot_router, prefix="/slots")
 app.include_router(history_router, prefix="/history")
 app.include_router(esp_router, prefix="/esp")
-app.include_router(chart_router, prefix="/chart")  # ✅ Route baru untuk statistik chart
+app.include_router(chart_router, prefix="/chart")
+app.include_router(camera_router, prefix="/camera")  # ✅ TAMBAHAN BARU
 
 # jalankan YOLO di background
 yolo_service = YoloService()
