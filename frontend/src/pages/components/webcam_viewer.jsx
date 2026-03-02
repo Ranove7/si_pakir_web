@@ -272,13 +272,12 @@ export default function WebcamViewer() {
       {/* Description */}
       <div className="mt-4 backdrop-blur-xl bg-blue-500/5 rounded-lg p-4 border border-blue-500/20">
         <p className="text-blue-200 text-sm">
-          <span className="font-bold">💡 Controls:</span> 
+          <span className="font-bold">💡:</span> 
           {showBoxes ? (
-            <> Showing YOLO detection boxes. Click <span className="font-semibold">"Boxes OFF"</span> for clean camera view.</>
+            <> Menampilkan kotak deteksi YOLO. Klik <span className="font-semibold">"Boxes OFF"</span> untuk tampilan bersih tanpa kotak deteksi YOLO.</>
           ) : (
-            <> Clean camera view active. Click <span className="font-semibold">"Boxes ON"</span> to see AI detection.</>
+            <> Tampilan bersih aktif. Klik <span className="font-semibold">"Boxes ON"</span> untuk melihat tampilan menggunakan YOLO.</>
           )}
-          {" "}Use <span className="font-semibold">Fullscreen</span> button for presentation mode.
         </p>
       </div>
 
