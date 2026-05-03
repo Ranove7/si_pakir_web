@@ -5,35 +5,52 @@ import {
   History,
   BarChart3,
   Camera,
+  Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 
-export default function Sidebar({ isOpen, setIsOpen, activeMenu, setActiveMenu }) {
+export default function Sidebar({
+  isOpen,
+  setIsOpen,
+  activeMenu,
+  setActiveMenu,
+  onLogout,
+}) {
   const menus = [
     { name: "Dashboard", icon: Home },
     { name: "Slots", icon: ParkingSquare },
     { name: "History", icon: History },
     { name: "Statistics", icon: BarChart3 },
     { name: "Webcam", icon: Camera },
+    { name: "Settings", icon: Settings }, // ✅ Tambahan
   ];
 
   return (
     <div
-      className={`h-screen bg-slate-900/80 backdrop-blur-xl border-r border-white/10 transition-all duration-300 
-      ${isOpen ? "w-64" : "w-20"} flex flex-col`}
+      className={`h-screen bg-slate-900/80 backdrop-blur-xl border-r border-white/10 transition-all duration-300 flex flex-col
+      ${isOpen ? "w-64" : "w-20"}`}
     >
-      {/* Toggle Button */}
-      <div className="flex justify-end p-3">
+      {/* TOGGLE */}
+      <div
+        className={`p-3 flex ${
+          isOpen ? "justify-end" : "justify-center"
+        }`}
+      >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-white hover:bg-white/10 p-2 rounded-lg"
+          className="text-white hover:bg-white/10 p-2 rounded-lg transition-all"
         >
-          {isOpen ? <ChevronLeft /> : <ChevronRight />}
+          {isOpen ? (
+            <ChevronLeft size={20} />
+          ) : (
+            <ChevronRight size={20} />
+          )}
         </button>
       </div>
 
-      {/* Menu */}
+      {/* MENU */}
       <div className="flex-1 px-2 space-y-2">
         {menus.map((menu, i) => {
           const Icon = menu.icon;
@@ -43,14 +60,39 @@ export default function Sidebar({ isOpen, setIsOpen, activeMenu, setActiveMenu }
             <button
               key={i}
               onClick={() => setActiveMenu(menu.name)}
-              className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all
-                ${active ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white" : "text-slate-400 hover:bg-white/10"}`}
+              className={`w-full p-3 rounded-xl transition-all flex items-center
+              ${
+                isOpen
+                  ? "justify-start gap-3"
+                  : "justify-center"
+              }
+              ${
+                active
+                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                  : "text-slate-400 hover:bg-white/10"
+              }`}
             >
               <Icon size={20} />
               {isOpen && <span>{menu.name}</span>}
             </button>
           );
         })}
+      </div>
+
+      {/* LOGOUT */}
+      <div className="p-3 border-t border-white/10">
+        <button
+          onClick={onLogout}
+          className={`w-full p-3 rounded-xl transition-all flex items-center text-red-400 hover:bg-red-500/10
+          ${
+            isOpen
+              ? "justify-start gap-3"
+              : "justify-center"
+          }`}
+        >
+          <LogOut size={20} />
+          {isOpen && <span>Logout</span>}
+        </button>
       </div>
     </div>
   );
