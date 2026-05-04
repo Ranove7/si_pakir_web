@@ -66,7 +66,7 @@ export default function WebcamViewer() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              Camera LIVE
+              YOLO Object Detection
             </h2>
             <p className="text-slate-400 text-sm">Real-time parking monitoring with AI</p>
           </div>
