@@ -1,4 +1,3 @@
-// DashboardPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Wifi,
@@ -11,7 +10,7 @@ import ParkingSlotsWidget from "./components/parking_slot";
 import TableHistory from "./components/table_history";
 import StatisticsWidget from "./components/chart";
 import WebcamViewer from "./components/webcam_viewer";
-import SettingsPage from "./components/settings"; // ✅ IMPORT SETTINGS
+import SettingsPage from "./components/settings";
 
 import { getSlots } from "../services/slot_service";
 import { getHistory } from "../services/history_service";
@@ -23,7 +22,45 @@ import {
 
 export default function DashboardPage({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
+
+  const [user, setUser] = useState(null);
+
+  // 🔥 ambil user dulu
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    setUser(currentUser);
+  }, []);
+
+  // 🔥 fungsi default menu berdasarkan role
+  const getDefaultMenu = (role) => {
+    if (role === "admin") return "Dashboard";
+    if (role === "petugas") return "Dashboard";
+    if (role === "user") return "Slots";
+    return "Dashboard";
+  };
+
+  // 🔥 ambil dari localStorage ATAU default
+  const [activeMenu, setActiveMenu] = useState(() => {
+    const saved = localStorage.getItem("activeMenu");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    if (saved) return saved;
+    return getDefaultMenu(user.role);
+  });
+
+  // 🔥 sync menu ke localStorage
+  useEffect(() => {
+    localStorage.setItem("activeMenu", activeMenu);
+  }, [activeMenu]);
+
+  // 🔥 paksa redirect kalau user tidak boleh akses dashboard
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role === "user" && activeMenu === "Dashboard") {
+      setActiveMenu("Slots");
+    }
+  }, [user, activeMenu]);
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [parkingSlots, setParkingSlots] = useState([]);
@@ -32,12 +69,7 @@ export default function DashboardPage({ onLogout }) {
   const [isConnected, setIsConnected] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    setUser(getCurrentUser());
-  }, []);
-
+  // ⏰ jam realtime
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -46,6 +78,7 @@ export default function DashboardPage({ onLogout }) {
     return () => clearInterval(timer);
   }, []);
 
+  // 📡 fetch slot
   useEffect(() => {
     const fetchSlots = async () => {
       try {
@@ -63,6 +96,7 @@ export default function DashboardPage({ onLogout }) {
     return () => clearInterval(interval);
   }, []);
 
+  // 📊 fetch history
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -82,12 +116,16 @@ export default function DashboardPage({ onLogout }) {
   const handleLogout = () => {
     logoutUser();
 
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("activeMenu");
+
     if (onLogout) {
       onLogout();
     }
   };
 
-  // ✅ FIX MENU SETTINGS
+  // 🔥 render konten
   const renderContent = () => {
     switch (activeMenu) {
       case "Dashboard":
@@ -111,12 +149,21 @@ export default function DashboardPage({ onLogout }) {
         return <WebcamViewer />;
 
       case "Settings":
-        return <SettingsPage />; // ✅ TAMBAHKAN INI
+        return <SettingsPage />;
 
       default:
         return <div className="text-white">Menu tidak ditemukan</div>;
     }
   };
+
+  // 🔥 loading state
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center text-white">
+        Loading user...
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950">
@@ -164,11 +211,11 @@ export default function DashboardPage({ onLogout }) {
 
           <div className="text-right">
             <p className="text-white font-semibold text-lg">
-              👋 {user?.nama || "Guest"}
+              👋 {user?.nama}
             </p>
 
             <p className="text-purple-300 text-xs uppercase">
-              {user?.role || "-"}
+              {user?.role}
             </p>
 
             <p className="text-white font-mono text-lg mt-1">
@@ -188,7 +235,6 @@ export default function DashboardPage({ onLogout }) {
 
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-
           <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm">
 
             <div className="flex justify-between items-center mb-4">

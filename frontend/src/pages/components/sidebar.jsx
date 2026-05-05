@@ -18,15 +18,45 @@ export default function Sidebar({
   setActiveMenu,
   onLogout,
 }) {
-  const menus = [
-    { name: "Dashboard", icon: Home },
-    { name: "Slots", icon: ParkingSquare },
-    { name: "History", icon: History },
-    { name: "Statistics", icon: BarChart3 },
-    { name: "Webcam", icon: Camera },
-    { name: "Settings", icon: Settings }, // ✅ Tambahan
-  ];
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  if (!user?.role) {
+    return (
+      <div className="h-screen w-64 bg-slate-900 text-white flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  const menus = [
+  // ❌ Dashboard hanya untuk admin & petugas
+  ...(user.role !== "user"
+    ? [{ name: "Dashboard", icon: Home }]
+    : []),
+
+  ...(user.role === "admin"
+    ? [
+        { name: "Slots", icon: ParkingSquare },
+        { name: "History", icon: History },
+        { name: "Statistics", icon: BarChart3 },
+        { name: "Settings", icon: Settings },
+      ]
+    : []),
+
+  ...(user.role === "petugas"
+    ? [
+        { name: "Slots", icon: ParkingSquare },
+        { name: "History", icon: History },
+      ]
+    : []),
+
+  ...(user.role === "user"
+    ? [
+        { name: "Slots", icon: ParkingSquare },
+        { name: "Settings", icon: Settings },
+      ]
+    : []),
+];
   return (
     <div
       className={`h-screen bg-slate-900/80 backdrop-blur-xl border-r border-white/10 transition-all duration-300 flex flex-col
@@ -34,9 +64,8 @@ export default function Sidebar({
     >
       {/* TOGGLE */}
       <div
-        className={`p-3 flex ${
-          isOpen ? "justify-end" : "justify-center"
-        }`}
+        className={`p-3 flex ${isOpen ? "justify-end" : "justify-center"
+          }`}
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -61,16 +90,14 @@ export default function Sidebar({
               key={i}
               onClick={() => setActiveMenu(menu.name)}
               className={`w-full p-3 rounded-xl transition-all flex items-center
-              ${
-                isOpen
+              ${isOpen
                   ? "justify-start gap-3"
                   : "justify-center"
-              }
-              ${
-                active
+                }
+              ${active
                   ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
                   : "text-slate-400 hover:bg-white/10"
-              }`}
+                }`}
             >
               <Icon size={20} />
               {isOpen && <span>{menu.name}</span>}
@@ -84,11 +111,10 @@ export default function Sidebar({
         <button
           onClick={onLogout}
           className={`w-full p-3 rounded-xl transition-all flex items-center text-red-400 hover:bg-red-500/10
-          ${
-            isOpen
+          ${isOpen
               ? "justify-start gap-3"
               : "justify-center"
-          }`}
+            }`}
         >
           <LogOut size={20} />
           {isOpen && <span>Logout</span>}
