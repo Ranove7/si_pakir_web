@@ -1,164 +1,113 @@
 from services.database_service import SessionLocal
 from models.user_model import UserModel
-from fastapi import HTTPException
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from passlib.hash import bcrypt
+import requests
 
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-# ==========================
+# =========================================
 # GET ALL USERS
-# ==========================
+# =========================================
 def get_all_users():
+
     session = SessionLocal()
-    try:
-        users = session.query(UserModel).all()
-        return [
-            {
-                "id": u.id,
-                "nama": u.nama,
-                "username": u.username,
-                "email": u.email,
-                "id_card": u.id_card,
-                "role": u.role,
-            }
-            for u in users
-        ]
-    finally:
-        session.close()
+
+    users = session.query(UserModel).all()
+
+    session.close()
+
+    return users
 
 
-# ==========================
+# =========================================
 # GET USER BY ID
-# ==========================
+# =========================================
 def get_user_by_id(user_id: int):
+
     session = SessionLocal()
-    try:
-        user = session.query(UserModel).filter(UserModel.id == user_id).first()
-        if not user:
-            raise HTTPException(404, "User tidak ditemukan")
-        return {
-            "id": user.id,
-            "nama": user.nama,
-            "username": user.username,
-            "email": user.email,
-            "id_card": user.id_card,
-            "role": user.role,
-        }
-    finally:
-        session.close()
+
+    user = (
+        session.query(UserModel)
+        .filter(UserModel.id == user_id)
+        .first()
+    )
+
+    session.close()
+
+    return user
 
 
-# ==========================
+# =========================================
 # CREATE USER
-# ==========================
+# =========================================
 def create_user(data):
+
     session = SessionLocal()
-    try:
-        # cek username duplikat
-        existing_username = (
-            session.query(UserModel)
-            .filter(UserModel.username == data.username)
-            .first()
-        )
-        if existing_username:
-            raise HTTPException(400, "Username sudah digunakan")
 
-        # cek email duplikat
-        existing_email = (
-            session.query(UserModel)
-            .filter(UserModel.email == data.email)
-            .first()
-        )
-        if existing_email:
-            raise HTTPException(400, "Email sudah digunakan")
+    new_user = UserModel(
+        nama=data.nama,
+        username=data.username,
+        email=data.email,
+        password=bcrypt.hash(data.password),
+        id_card=data.id_card,
+        role=data.role.value
+    )
 
-        user = UserModel(
-            nama=data.nama,
-            username=data.username,
-            email=data.email,
-            password=hash_password(data.password),
-            id_card=data.id_card,
-            role=data.role.value,
-        )
+    session.add(new_user)
 
-        session.add(user)
-        session.commit()
-        session.refresh(user)
+    session.commit()
 
-        return {
-            "message": "User berhasil dibuat",
-            "user": {
-                "id": user.id,
-                "nama": user.nama,
-                "username": user.username,
-                "email": user.email,
-                "id_card": user.id_card,
-                "role": user.role,
-            },
-        }
-    finally:
-        session.close()
+    session.refresh(new_user)
+
+    session.close()
+
+    return new_user
 
 
-# ==========================
+# =========================================
 # UPDATE USER
-# ==========================
+# =========================================
 def update_user(user_id: int, data):
+
     session = SessionLocal()
-    try:
-        user = session.query(UserModel).filter(UserModel.id == user_id).first()
-        if not user:
-            raise HTTPException(404, "User tidak ditemukan")
 
-        # cek username duplikat (selain diri sendiri)
-        existing_username = (
-            session.query(UserModel)
-            .filter(UserModel.username == data.username, UserModel.id != user_id)
-            .first()
-        )
-        if existing_username:
-            raise HTTPException(400, "Username sudah digunakan user lain")
+    user = (
+        session.query(UserModel)
+        .filter(UserModel.id == user_id)
+        .first()
+    )
 
-        # cek email duplikat (selain diri sendiri)
-        existing_email = (
-            session.query(UserModel)
-            .filter(UserModel.email == data.email, UserModel.id != user_id)
-            .first()
-        )
-        if existing_email:
-            raise HTTPException(400, "Email sudah digunakan user lain")
-
-        user.nama = data.nama
-        user.username = data.username
-        user.email = data.email
-        user.id_card = data.id_card
-        user.role = data.role.value
-
-        session.commit()
-
-        return {"message": "User berhasil diperbarui"}
-    finally:
+    if not user:
         session.close()
+        return False
 
+    user.nama = data.nama
+    user.username = data.username
+    user.email = data.email
 
-# ==========================
-# DELETE USER
-# ==========================
-def delete_user(user_id: int):
-    session = SessionLocal()
+    # update password
+    if data.password:
+        user.password = bcrypt.hash(data.password)
+
+    user.id_card = data.id_card
+    user.role = data.role.value
+
+    session.commit()
+
+    session.close()
+
+    return True
+
+def get_rfid_card():
+
     try:
-        user = session.query(UserModel).filter(UserModel.id == user_id).first()
-        if not user:
-            raise HTTPException(404, "User tidak ditemukan")
 
-        session.delete(user)
-        session.commit()
+        response = requests.get(
+            "http://192.168.1.5:8000/rfid/latest"
+        )
 
-        return {"message": "User berhasil dihapus"}
-    finally:
-        session.close()
+        data = response.json()
+
+        return data.get("id_card")
+
+    except:
+        return None
