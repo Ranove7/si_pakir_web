@@ -1,6 +1,6 @@
 // API Configuration untuk Smart Parking System
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // API Endpoints
 export const API_ENDPOINTS = {

@@ -31,7 +31,7 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       const res = await axios.get(
-        "http://127.0.0.1:8000/users"
+        "http://103.157.27.239:8000/users"
       );
 
       setUsers(res.data);
@@ -62,7 +62,7 @@ export default function UserManagement() {
 
     try {
       await axios.post(
-        "http://127.0.0.1:8000/users",
+        "http://103.157.27.239:8000/users",
         form
       );
 

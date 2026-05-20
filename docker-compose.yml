@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: si-parkir-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: si_parkir
+      MYSQL_USER: kelompok4
+      MYSQL_PASSWORD: kelompok4
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: si-parkir-backend
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - ./backend/.env
+
+  frontend:
+    build: ./frontend
+    container_name: si-parkir-frontend
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

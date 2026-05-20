@@ -8,7 +8,7 @@ export default function WebcamViewer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showBoxes, setShowBoxes] = useState(true);
   const containerRef = useRef(null);
-  const API_URL = "http://localhost:8000";
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     checkCameraStatus();

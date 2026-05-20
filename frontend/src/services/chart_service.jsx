@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/chart";
+const API_URL = "http://103.157.27.239:8000/chart";
 
 // Ambil statistik mingguan (7 hari terakhir)
 export const getWeeklyStats = async () => {

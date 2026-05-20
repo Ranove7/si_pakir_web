@@ -1,6 +1,6 @@
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_PASS = ""
+DB_HOST = "db"
+DB_USER = "kelompok4"
+DB_PASS = "kelompok4"
 DB_NAME = "si_parkir"
 
 YOLO_MODEL_PATH = "model_yolo/best_yolov5.pt"

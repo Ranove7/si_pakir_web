@@ -43,10 +43,11 @@ app.add_middleware(
 # KONEKSI DATABASE
 # =========================
 db = pymysql.connect(
-    host="localhost",
+    host="db",
     user="root",
-    password="",
-    database="si_parkir"
+    password="root123",
+    database="si_parkir",
+    port=3306
 )
 
 # =========================
