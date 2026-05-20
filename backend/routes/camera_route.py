@@ -9,6 +9,7 @@ from config import (
 )
 from services.slot_service import update_slot_status, get_all_slots
 from services.history_service import add_history
+
 import time
 import logging
 
@@ -296,7 +297,7 @@ async def video_feed(show_boxes: bool = Query(True, description="Show YOLO boxes
 @router.get("/status")
 async def camera_status():
     """Check camera status"""
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     is_opened = cap.isOpened()
     cap.release()
     return {
