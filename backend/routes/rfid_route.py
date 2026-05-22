@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# simpan sementara RFID terakhir
 latest_rfid = {
     "id_card": None
 }
@@ -35,4 +34,11 @@ def receive_rfid(data: RFIDRequest):
 @router.get("/latest")
 def get_latest_rfid():
 
-    return latest_rfid
+    card = latest_rfid["id_card"]
+
+    # reset setelah dibaca
+    latest_rfid["id_card"] = None
+
+    return {
+        "id_card": card
+    }

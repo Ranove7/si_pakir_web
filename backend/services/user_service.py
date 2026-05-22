@@ -102,12 +102,13 @@ def get_rfid_card():
     try:
 
         response = requests.get(
-            "http://192.168.1.5:8000/rfid/latest"
+            "http://127.0.0.1:8000/rfid/latest"
         )
 
         data = response.json()
 
         return data.get("id_card")
 
-    except:
+    except Exception as e:
+        print(e)
         return None
