@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Users,
 } from "lucide-react";
 
 export default function Sidebar({
@@ -37,6 +38,7 @@ export default function Sidebar({
   ...(user.role === "admin"
     ? [
         { name: "Slots", icon: ParkingSquare },
+        { name: "User", icon: Users },
         { name: "History", icon: History },
         { name: "Statistics", icon: BarChart3 },
         { name: "Settings", icon: Settings },

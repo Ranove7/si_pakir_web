@@ -32,14 +32,14 @@ export default function SettingsPage() {
 
     try {
       await axios.put(
-        "http://127.0.0.1:8000/auth/update-profile",  // ← ganti URL
+        "http://103.157.27.239:8000/auth/update-profile",  // ← ganti URL
         { id: currentUser.id, nama, email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (password !== "") {
         await axios.put(
-          "http://127.0.0.1:8000/auth/update-password",  // ← ganti URL
+          "http://103.157.27.239:8000/auth/update-password",  // ← ganti URL
           { id: currentUser.id, password },
           { headers: { Authorization: `Bearer ${token}` } }
         );

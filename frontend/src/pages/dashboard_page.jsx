@@ -11,6 +11,7 @@ import TableHistory from "./components/table_history";
 import StatisticsWidget from "./components/chart";
 import WebcamViewer from "./components/webcam_viewer";
 import SettingsPage from "./components/settings";
+import User from "./components/user";
 
 import { getSlots } from "../services/slot_service";
 import { getHistory } from "../services/history_service";
@@ -138,6 +139,9 @@ export default function DashboardPage({ onLogout }) {
 
       case "Slots":
         return <ParkingSlotsWidget parkingSlots={parkingSlots} />;
+
+      case "User":
+        return <User />;
 
       case "History":
         return <TableHistory history={history} />;

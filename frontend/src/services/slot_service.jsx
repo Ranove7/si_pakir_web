@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Pastikan URL ini sesuai dengan backend kamu
-const API_URL = "http://localhost:8000/slots/";
+const API_URL = "http://103.157.27.239:8000/slots/";
 
 export const getSlots = async () => {
   try {

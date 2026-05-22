@@ -1,12 +1,13 @@
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_PASS = ""
+DB_HOST = "db"
+DB_USER = "kelompok4"
+DB_PASS = "kelompok4"
 DB_NAME = "si_parkir"
 
 YOLO_MODEL_PATH = "model_yolo/best_yolov5.pt"
 DETECTION_INTERVAL = 0.3  # ✅ Kurangi delay (0.3-0.5 detik)
 
 # Camera Settings
+CAMERA_INDEX = 1
 CAMERA_BUFFER_SIZE = 1  # ✅ Minimal buffer
 SKIP_FRAMES = 2  # ✅ Skip beberapa frame
 MAX_FRAME_WIDTH = 640
