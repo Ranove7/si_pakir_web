@@ -33,6 +33,7 @@ def get_yolo_model():
         print("✅ YOLO model loaded for streaming!")
     return yolo_model
 
+
 # Class ID untuk mobil
 CAR_CLASS_ID = 0
 

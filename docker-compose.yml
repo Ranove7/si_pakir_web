@@ -28,7 +28,7 @@ services:
     build: ./frontend
     container_name: si-parkir-frontend
     ports:
-      - "80:80"
+      - "3001:80"
     restart: always
     depends_on:
       - backend
@@ -82,7 +82,18 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: si-parkir-phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - db
 volumes:
   db_data:
   prometheus_data:

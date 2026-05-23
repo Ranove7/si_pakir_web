@@ -33,7 +33,7 @@ app = FastAPI()
 # =========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://siparkir.online"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,9 +43,9 @@ app.add_middleware(
 # KONEKSI DATABASE
 # =========================
 db = pymysql.connect(
-    host="localhost",
+    host="db",
     user="root",
-    password="",
+    password="root123",
     database="si_parkir"
 )
 

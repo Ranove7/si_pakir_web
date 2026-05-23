@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // URL backend untuk history parkir
-const API_URL = "http://103.157.27.239:8000/history/";
+const API_URL = "https://api.siparkir.online/history/";
 
 export const getHistory = async () => {
   try {
