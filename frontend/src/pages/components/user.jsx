@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
 import {
-  CreditCard,
+  Users,
+  Plus,
+  RefreshCw,
   ScanLine,
   User,
   Mail,
+  Shield,
+  CreditCard,
   Lock,
 } from "lucide-react";
 
-export default function UserForm() {
+import {
+  getAllUsers,
+  createUser,
+  getLatestRFID,
+} from "../../services/user_service";
 
-  // =========================================
-  // STATE FORM
-  // =========================================
+export default function UserManagement() {
+  const [users, setUsers] = useState([]);
+
   const [form, setForm] = useState({
     nama: "",
     username: "",
@@ -21,85 +29,75 @@ export default function UserForm() {
     role: "user",
   });
 
-  // =========================================
-  // HANDLE INPUT
-  // =========================================
-  const handleChange = (e) => {
+  // =========================
+  // GET USERS
+  // =========================
+  const fetchUsers = async () => {
+    try {
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (error) {
+      console.log("Fetch Users Error:", error);
+    }
+  };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // =========================
+  // HANDLE INPUT
+  // =========================
+  const handleChange = (e) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
-
   };
 
-  // =========================================
+  // =========================
   // AUTO SCAN RFID
-  // =========================================
+  // =========================
   useEffect(() => {
-
     const fetchRFID = async () => {
-
       try {
+        const data = await getLatestRFID();
 
-        const response = await fetch(
-          "http://192.168.1.64:8000/rfid/latest"
-        );
-
-        const data = await response.json();
-
-        // kalau RFID ada
         if (data.id_card) {
+          setForm((prev) => {
+            if (prev.id_card === data.id_card) {
+              return prev;
+            }
 
-          setForm((prev) => ({
-            ...prev,
-            id_card: data.id_card,
-          }));
+            console.log("RFID Terdeteksi:", data.id_card);
 
-          console.log("RFID Terdeteksi:", data.id_card);
+            return {
+              ...prev,
+              id_card: data.id_card,
+            };
+          });
         }
-
       } catch (error) {
-
         console.log("RFID Error:", error);
-
       }
     };
 
-    // polling tiap 1 detik
     const interval = setInterval(fetchRFID, 1000);
 
     return () => clearInterval(interval);
-
   }, []);
 
-  // =========================================
-  // SUBMIT FORM
-  // =========================================
+  // =========================
+  // CREATE USER
+  // =========================
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      const response = await fetch(
-        "http://192.168.1.64:8000/users",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
-
-      const data = await response.json();
-
-      console.log(data);
+      await createUser(form);
 
       alert("User berhasil ditambahkan");
 
-      // reset form
       setForm({
         nama: "",
         username: "",
@@ -109,177 +107,343 @@ export default function UserForm() {
         role: "user",
       });
 
+      fetchUsers();
     } catch (error) {
+      console.log("Submit Error:", error);
+      alert("Gagal tambah user");
+    }
+  };
 
-      console.log(error);
+  // =========================
+  // ROLE STYLE
+  // =========================
+  const getRoleStyle = (role) => {
+    switch (role) {
+      case "admin":
+        return "bg-purple-500/20 text-purple-300 border border-purple-500/30";
 
-      alert("Terjadi kesalahan");
+      case "petugas":
+        return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
 
+      default:
+        return "bg-green-500/20 text-green-300 border border-green-500/30";
     }
   };
 
   return (
-    <div className="w-full">
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
+    <div className="space-y-8">
+      {/* HEADER */}
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-xl opacity-50"></div>
 
-        {/* NAMA */}
-        <div className="space-y-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            Nama
-          </label>
-
-          <div className="relative">
-            <User
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-              size={18}
-            />
-
-            <input
-              type="text"
-              name="nama"
-              placeholder="Masukkan nama"
-              value={form.nama}
-              onChange={handleChange}
-              className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
-            />
+          <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 p-4 rounded-2xl">
+            <Users className="text-white" size={30} />
           </div>
         </div>
 
-        {/* USERNAME */}
-        <div className="space-y-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            Username
-          </label>
+        <div>
+          <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            User Management
+          </h1>
 
+          <p className="text-slate-400">
+            Kelola data user & RFID access
+          </p>
+        </div>
+      </div>
+
+      {/* FORM CARD */}
+      <div className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10 shadow-2xl">
+        <div className="flex items-center gap-3 mb-8">
           <div className="relative">
-            <User
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-              size={18}
-            />
+            <div className="absolute inset-0 bg-indigo-500 rounded-xl blur-lg opacity-50"></div>
 
-            <input
-              type="text"
-              name="username"
-              placeholder="Masukkan username"
-              value={form.username}
-              onChange={handleChange}
-              className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
-            />
+            <div className="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl">
+              <Plus className="text-white" size={24} />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+              Tambah User
+            </h2>
+
+            <p className="text-slate-400 text-sm">
+              Tambahkan akun baru dan RFID card
+            </p>
           </div>
         </div>
 
-        {/* EMAIL */}
-        <div className="space-y-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            Email
-          </label>
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* NAMA */}
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              Nama Lengkap
+            </label>
 
-          <div className="relative">
-            <Mail
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-              size={18}
-            />
-
-            <input
-              type="email"
-              name="email"
-              placeholder="Masukkan email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
-            />
-          </div>
-        </div>
-
-        {/* PASSWORD */}
-        <div className="space-y-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            Password
-          </label>
-
-          <div className="relative">
-            <Lock
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-              size={18}
-            />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Masukkan password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
-            />
-          </div>
-        </div>
-
-        {/* ROLE */}
-        <div className="space-y-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            Role
-          </label>
-
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 rounded-2xl outline-none text-white"
-          >
-            <option value="user" className="bg-slate-900">
-              User
-            </option>
-
-            <option value="admin" className="bg-slate-900">
-              Admin
-            </option>
-          </select>
-        </div>
-
-        {/* RFID */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-slate-300 text-sm font-semibold">
-            RFID / ID Card
-          </label>
-
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <CreditCard
+            <div className="relative">
+              <User
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
                 size={18}
               />
 
               <input
                 type="text"
-                name="id_card"
-                placeholder="Tap kartu RFID atau input manual"
-                value={form.id_card}
+                name="nama"
+                placeholder="Masukkan nama"
+                value={form.nama}
                 onChange={handleChange}
                 className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+                required
               />
             </div>
+          </div>
 
-            <div className="px-6 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-300 font-semibold">
-              <ScanLine size={18} />
-              Auto Scan Active
+          {/* USERNAME */}
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              Username
+            </label>
+
+            <div className="relative">
+              <Users
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                size={18}
+              />
+
+              <input
+                type="text"
+                name="username"
+                placeholder="Masukkan username"
+                value={form.username}
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+                required
+              />
             </div>
           </div>
-        </div>
 
-        {/* BUTTON */}
-        <div className="md:col-span-2">
+          {/* EMAIL */}
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              Email
+            </label>
+
+            <div className="relative">
+              <Mail
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                size={18}
+              />
+
+              <input
+                type="email"
+                name="email"
+                placeholder="Masukkan email"
+                value={form.email}
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+                required
+              />
+            </div>
+          </div>
+
+          {/* PASSWORD */}
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              Password
+            </label>
+
+            <div className="relative">
+              <Lock
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                size={18}
+              />
+
+              <input
+                type="password"
+                name="password"
+                placeholder="Masukkan password"
+                value={form.password}
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+                required
+              />
+            </div>
+          </div>
+
+          {/* ROLE */}
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              Role
+            </label>
+
+            <div className="relative">
+              <Shield
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                size={18}
+              />
+
+              <select
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                className="w-full appearance-none bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+              >
+                <option className="bg-slate-900" value="user">
+                  User
+                </option>
+
+                <option className="bg-slate-900" value="admin">
+                  Admin
+                </option>
+
+                <option className="bg-slate-900" value="petugas">
+                  Petugas
+                </option>
+              </select>
+            </div>
+          </div>
+
+          {/* RFID */}
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-slate-300 text-sm font-semibold">
+              RFID / ID Card
+            </label>
+
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <CreditCard
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                  size={18}
+                />
+
+                <input
+                  type="text"
+                  name="id_card"
+                  placeholder="Tap kartu RFID atau input manual"
+                  value={form.id_card}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all p-4 pl-12 rounded-2xl outline-none text-white"
+                />
+              </div>
+
+              <div className="px-6 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-300 font-semibold">
+                <ScanLine size={18} />
+                Auto Scan Active
+              </div>
+            </div>
+          </div>
+
+          {/* BUTTON */}
+          <div className="md:col-span-2">
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl font-bold hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 text-white"
+            >
+              <Plus size={20} />
+              Tambah User
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* TABLE CARD */}
+      <div className="backdrop-blur-xl bg-white/5 rounded-3xl p-8 border border-white/10 shadow-2xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+              Data User
+            </h2>
+
+            <p className="text-slate-400 text-sm">
+              List seluruh user terdaftar
+            </p>
+          </div>
+
           <button
-            type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 transition-all p-4 rounded-2xl text-white font-bold"
+            onClick={fetchUsers}
+            className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-2xl transition-all hover:scale-105"
           >
-            Simpan User
+            <RefreshCw className="text-cyan-400" size={20} />
           </button>
         </div>
 
-      </form>
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full">
+            <thead className="bg-white/5">
+              <tr className="text-slate-300">
+                <th className="p-4 text-left">ID</th>
+                <th className="p-4 text-left">Nama</th>
+                <th className="p-4 text-left">Username</th>
+                <th className="p-4 text-left">Email</th>
+                <th className="p-4 text-left">RFID</th>
+                <th className="p-4 text-left">Role</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {users.map((user, index) => (
+                <tr
+                  key={user.id}
+                  className={`border-t border-white/5 hover:bg-white/5 transition-all ${
+                    index % 2 === 0 ? "bg-white/[0.02]" : ""
+                  }`}
+                >
+                  <td className="p-4 text-slate-300 font-semibold">
+                    #{user.id}
+                  </td>
+
+                  <td className="p-4 text-white font-semibold">
+                    {user.nama}
+                  </td>
+
+                  <td className="p-4 text-slate-300">
+                    {user.username}
+                  </td>
+
+                  <td className="p-4 text-slate-300">
+                    {user.email}
+                  </td>
+
+                  <td className="p-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm">
+                      <CreditCard size={14} />
+                      {user.id_card || "-"}
+                    </div>
+                  </td>
+
+                  <td className="p-4">
+                    <span
+                      className={`px-4 py-1 rounded-full text-sm font-semibold ${getRoleStyle(
+                        user.role
+                      )}`}
+                    >
+                      {user.role}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {users.length === 0 && (
+            <div className="py-20 text-center">
+              <Users
+                className="mx-auto text-slate-600 mb-4"
+                size={50}
+              />
+
+              <p className="text-slate-400">
+                Belum ada data user
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

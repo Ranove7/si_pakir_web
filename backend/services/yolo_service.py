@@ -19,20 +19,13 @@ CAR_CLASS_ID = 0
 
 class YoloService:
     def __init__(self):
-        print("🔄 Loading YOLO model...")
-        self.model = YOLO(YOLO_MODEL_PATH)
-        self.model.fuse()
         self.cache_status = {}
         self.slot_mapping = SLOT_MAPPING
-        # Inisialisasi cache status awal
         for kode in SLOT_MAPPING.keys():
             self.cache_status[kode] = 'kosong'
-
-        print("✅ YOLO model loaded!")
-        
-        # Stabilizer untuk mencegah flicker
         self.detection_buffer = {kode: [] for kode in SLOT_MAPPING.keys()}
-        self.BUFFER_SIZE = 3 
+        self.BUFFER_SIZE = 3
+        print("✅ YoloService initialized (model diload oleh camera_route)") 
 
     def calculate_iou(self, box1, box2):
         """Intersection over Union (IoU)"""
@@ -136,21 +129,7 @@ class YoloService:
         return self.cache_status.get(kode, 'kosong')
 
     def run(self):
-        """
-        ⚠️ PERINGATAN: Method ini TIDAK DIGUNAKAN lagi!
-        
-        Streaming kamera sekarang 100% dilakukan oleh camera_route.py
-        File ini hanya untuk import class YoloService jika diperlukan.
-        
-        Jika Anda menjalankan python yolo_service.py, tidak ada yang terjadi.
-        """
-        print("=" * 60)
-        print("⚠️  PERINGATAN: yolo_service.py tidak boleh dijalankan langsung!")
-        print("=" * 60)
-        print("📌 Streaming kamera sekarang 100% di-handle oleh camera_route.py")
-        print("📌 Untuk menjalankan aplikasi, gunakan:")
-        print("   python main.py")
-        print("=" * 60)
+        print("⚠️ YoloService.run() tidak digunakan. Kamera dihandle browser via WebSocket.")
         return
 
 
