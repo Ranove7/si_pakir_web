@@ -46,3 +46,11 @@ export async function deleteUser(id) {
   });
   return res.data;
 }
+
+// GET RFID terakhir
+export async function getLatestRFID() {
+  const res = await axios.get(`${API_BASE}/rfid/latest`, {
+    headers: getAuthHeaders(),
+  });
+  return res.data;
+}
