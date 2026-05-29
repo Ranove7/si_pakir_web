@@ -144,7 +144,7 @@ export default function UserManagement() {
 
         <div>
           <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-            User Hebat
+            User Management
           </h1>
 
           <p className="text-slate-400">
