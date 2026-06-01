@@ -1,17 +1,23 @@
-DB_HOST = "db"
-DB_USER = "kelompok4"
-DB_PASS = "kelompok4"
-DB_NAME = "si_parkir"
+import os
+from dotenv import load_dotenv
 
-YOLO_MODEL_PATH = "model_yolo/best_yolov5.pt"
-DETECTION_INTERVAL = 0.3  # ✅ Kurangi delay (0.3-0.5 detik)
+load_dotenv()
 
-# Camera Settings
-CAMERA_INDEX = 1
-CAMERA_BUFFER_SIZE = 1  # ✅ Minimal buffer
-SKIP_FRAMES = 2  # ✅ Skip beberapa frame
-MAX_FRAME_WIDTH = 640
-CONFIDENCE_THRESHOLD = 0.8
+# Database
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT"))
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+
+# YOLO & Camera
+YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH")
+DETECTION_INTERVAL = float(os.getenv("DETECTION_INTERVAL"))
+CAMERA_INDEX = int(os.getenv("CAMERA_INDEX"))
+CAMERA_BUFFER_SIZE = int(os.getenv("CAMERA_BUFFER_SIZE"))
+SKIP_FRAMES = int(os.getenv("SKIP_FRAMES"))
+MAX_FRAME_WIDTH = int(os.getenv("MAX_FRAME_WIDTH"))
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD"))
 
 SLOT_MAPPING = {
     "A1": (401, 140, 633, 307),
@@ -21,4 +27,3 @@ SLOT_MAPPING = {
     "A5": (845, 313, 1075, 460),
     "A6": (875, 466, 1079, 608),
 }
-

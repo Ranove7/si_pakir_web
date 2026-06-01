@@ -5,10 +5,14 @@ from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # JWT
-SECRET_KEY = "secretkey123456789"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pymysql
 from datetime import datetime
 
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME 
 from routes.slot_route import router as slot_router
 from routes.history_route import router as history_router
 from routes.esp_route import router as esp_router
@@ -27,11 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-db = pymysql.connect(
-    host="db",
-    user="root",
-    password="root123",
-    database="si_parkir"
+db = pymysql.connect( 
+    host=DB_HOST,
+    port=DB_PORT,
+    user=DB_USER,
+    password=DB_PASS,
+    database=DB_NAME,
 )
 
 class RFIDData(BaseModel):
