@@ -332,7 +332,7 @@ export default function UserManagement() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <div className="flex items-center gap-3">
             <Shield className="text-indigo-400" size={20} />
-            <h2 className="text-white font-bold text-lg">Manajemen Users</h2>
+            <h2 className="text-white font-bold text-lg">Data Users</h2>
           </div>
 
           {isAdmin && (
