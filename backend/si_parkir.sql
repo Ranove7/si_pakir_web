@@ -25,7 +25,8 @@ CREATE TABLE users (
 INSERT INTO users (nama, username, email, password, id_card, role) VALUES
 ('Parlembang Admin', 'admin01', 'admin@parkir.com', '$2b$12$pCjtgBPm9plQVQe2CSQFgOC1aLmRw6.e1vminN06fR17pamKyy/aa', 'CARD001', 'admin'),
 ('Rudi Petugas', 'petugas01', 'petugas@parkir.com', '$2b$12$.wkn.YRWP19AJd.05EpVeeCPfonuKLqAs5BKZzUsWp2XDUOFy87bu', 'CARD002', 'petugas'),
-('Andi User', 'user01', 'user@parkir.com', '$2b$12$X9tPwqcY0aDaRmC27kkZAOfS1LT.hMP.KXj3bDWYY9RktMM1vjwk2', NULL, 'user');
+('Andi User', 'user01', 'user@parkir.com', '$2b$12$X9tPwqcY0aDaRmC27kkZAOfS1LT.hMP.KXj3bDWYY9RktMM1vjwk2', NULL, 'user'),
+('Ranove Admin', 'ranove', 'ranove@parkir.com', '$2b$12$XOGuJR/P5DiyNwTQdec6DOJWN1B03NJVQ7YgtXtpPOX2i19cd2O6.', 'CARD003', 'admin');
 
 -- =========================
 -- Tabel parkir_slots
