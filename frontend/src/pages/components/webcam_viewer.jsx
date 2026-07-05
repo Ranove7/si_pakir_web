@@ -22,16 +22,28 @@ export default function WebcamViewer() {
   const fpsCountRef = useRef(0);
   const showBoxesRef = useRef(showBoxes);
 
-  const API_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "";
 
   useEffect(() => {
     showBoxesRef.current = showBoxes;
   }, [showBoxes]);
 
   const getWsUrl = () => {
-    const url = new URL(API_URL);
-    const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
-    return `${wsProtocol}//${url.host}/camera/ws`;
+    // Jika API_URL kosong atau relative path, gunakan host browser saat ini
+    if (!API_URL || API_URL.startsWith("/")) {
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${wsProtocol}//${window.location.host}/api/camera/ws`;
+    }
+    
+    // Jika menggunakan absolute URL
+    try {
+      const url = new URL(API_URL);
+      const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
+      return `${wsProtocol}//${url.host}/camera/ws`;
+    } catch (e) {
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${wsProtocol}//${window.location.host}/api/camera/ws`;
+    }
   };
 
   const startCamera = useCallback(async () => {
