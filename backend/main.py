@@ -22,6 +22,13 @@ app.add_middleware(
     allow_origins=[
         "https://siparkir.online",
         "https://www.siparkir.online",
+        # VPS & Development
+        "http://202.155.143.247",
+        "http://202.155.143.247:80",
+        "http://localhost",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1",
     ],
     allow_credentials=True,
     allow_methods=["*"],
