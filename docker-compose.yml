@@ -1,102 +1,166 @@
+version: '3.8'
+
 services:
+  # =====================
+  # DATABASE
+  # =====================
   db:
     image: mysql:8.0
-    container_name: si-parkir-db
+    container_name: si_parkir_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "3307:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-si_parkir}
+      MYSQL_USER: ${DB_USER:-parkir_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-parkir_pass}
     volumes:
       - db_data:/var/lib/mysql
+      - ./backend/si_parkir.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - si_parkir_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
+  # =====================
+  # BACKEND (FastAPI)
+  # =====================
   backend:
-    build: ./backend
-    container_name: si-parkir-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: si_parkir_backend
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-parkir_user}
+      DB_PASSWORD: ${DB_PASSWORD:-parkir_pass}
+      DB_NAME: ${DB_NAME:-si_parkir}
+      YOLO_MODEL_PATH: ${YOLO_MODEL_PATH:-model_yolo/best.pt}
+      DETECTION_INTERVAL: ${DETECTION_INTERVAL:-0.5}
+      CAMERA_INDEX: ${CAMERA_INDEX:-0}
+      CAMERA_BUFFER_SIZE: ${CAMERA_BUFFER_SIZE:-1}
+      SKIP_FRAMES: ${SKIP_FRAMES:-2}
+      MAX_FRAME_WIDTH: ${MAX_FRAME_WIDTH:-1280}
+      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.5}
+    volumes:
+      - ./backend:/app
     ports:
       - "8000:8000"
-    restart: always
     depends_on:
-      - db
-    env_file:
-      - ./backend/.env
+      db:
+        condition: service_healthy
+    networks:
+      - si_parkir_net
 
+  # =====================
+  # FRONTEND (React + Nginx)
+  # =====================
   frontend:
-    build: ./frontend
-    container_name: si-parkir-frontend
-    ports:
-      - "3001:80"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: si_parkir_frontend
     restart: always
+    ports:
+      - "80:80"
     depends_on:
       - backend
+    networks:
+      - si_parkir_net
 
+  # =====================
+  # PROMETHEUS (Monitoring)
+  # =====================
   prometheus:
     image: prom/prometheus:latest
-    container_name: si-parkir-prometheus
+    container_name: si_parkir_prometheus
     restart: always
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-    depends_on:
-      - node-exporter
-      - cadvisor
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - si_parkir_net
 
+  # =====================
+  # GRAFANA (Dashboard)
+  # =====================
   grafana:
     image: grafana/grafana:latest
-    container_name: si-parkir-grafana
+    container_name: si_parkir_grafana
     restart: always
-    ports:
-      - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: false
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
     depends_on:
       - prometheus
+    networks:
+      - si_parkir_net
 
+  # =====================
+  # NODE EXPORTER (Server Metrics)
+  # =====================
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: si-parkir-node-exporter
+    container_name: si_parkir_node_exporter
     restart: always
-    pid: host
-    command:
-      - "--path.rootfs=/host"
     volumes:
-      - /:/host:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - si_parkir_net
 
+  # =====================
+  # CADVISOR (Container Metrics)
+  # =====================
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
-    container_name: si-parkir-cadvisor
+    container_name: si_parkir_cadvisor
     restart: always
-    privileged: true
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: si-parkir-phpmyadmin
-    restart: always
     ports:
-      - "8081:80"
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    depends_on:
-      - db
+      - "8080:8080"
+    privileged: true
+    networks:
+      - si_parkir_net
 
 volumes:
   db_data:
   prometheus_data:
   grafana_data:
+
+networks:
+  si_parkir_net:
+    driver: bridge
