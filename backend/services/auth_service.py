@@ -2,7 +2,7 @@ from services.database_service import SessionLocal
 from models.user_model import UserModel
 from schemas.auth_schema import UserRegister, UserLogin
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
+import bcrypt
 from jose import jwt
 from datetime import datetime, timedelta
 import os
@@ -14,18 +14,24 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 # ==========================
 # PASSWORD
 # ==========================
 def hash_password(password):
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain, hashed):
-    return pwd_context.verify(plain, hashed)
+    try:
+        plain_bytes = plain.encode('utf-8')
+        hashed_bytes = hashed.encode('utf-8')
+        return bcrypt.checkpw(plain_bytes, hashed_bytes)
+    except Exception:
+        return False
 
 
 # ==========================
