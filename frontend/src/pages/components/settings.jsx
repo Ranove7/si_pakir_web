@@ -32,14 +32,14 @@ export default function SettingsPage() {
 
     try {
       await axios.put(
-        "https://api.siparkir.online/auth/update-profile",  // ← ganti URL
+        "/api/auth/update-profile",  // ← ganti URL
         { id: currentUser.id, nama, email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (password !== "") {
         await axios.put(
-          "https://api.siparkir.online/auth/update-password",  // ← ganti URL
+          "/api/auth/update-password",  // ← ganti URL
           { id: currentUser.id, password },
           { headers: { Authorization: `Bearer ${token}` } }
         );

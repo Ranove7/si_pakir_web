@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://api.siparkir.online/chart";
+const API_URL = "/api/chart";
 
 // Ambil statistik mingguan (7 hari terakhir)
 export const getWeeklyStats = async () => {

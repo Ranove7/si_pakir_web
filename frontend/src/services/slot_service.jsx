@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Pastikan URL ini sesuai dengan backend kamu
-const API_URL = "https://api.siparkir.online/slots/";
+const API_URL = "/api/slots/";
 
 export const getSlots = async () => {
   try {
