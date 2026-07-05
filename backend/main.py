@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pymysql
 from datetime import datetime
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME 
 from routes.slot_route import router as slot_router
@@ -16,6 +17,9 @@ from routes.user_route import router as user_router
 from routes.rfid_route import router as rfid_router
 
 app = FastAPI()
+
+# Expose /metrics endpoint for Prometheus scraping
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     CORSMiddleware,
