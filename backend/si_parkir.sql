@@ -41,10 +41,10 @@ CREATE TABLE parkir_slots (
 -- Dummy slot parkir A1 - A6
 INSERT INTO parkir_slots (kode_parkir, status) VALUES
 ('A1', 'kosong'),
-('A2', 'terisi'),
+('A2', 'kosong'),
 ('A3', 'kosong'),
 ('A4', 'kosong'),
-('A5', 'terisi'),
+('A5', 'kosong'),
 ('A6', 'kosong');
 
 -- =========================
@@ -61,6 +61,6 @@ CREATE TABLE history_parkir (
 );
 
 -- Dummy history parkir
-INSERT INTO history_parkir (kode_parkir, user_id, aktivitas) VALUES
-('A2', 3, 'parkir_masuk'),
-('A5', 2, 'parkir_masuk');
+-- INSERT INTO history_parkir (kode_parkir, user_id, aktivitas) VALUES
+-- ('A2', 3, 'parkir_masuk'),
+-- ('A5', 2, 'parkir_masuk');

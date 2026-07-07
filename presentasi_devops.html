@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DevOps SI Parkir - Ranove Farrel Cavalera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:#3B82F6; --cyan:#06B6D4; --purple:#8B5CF6;
+      --green:#10B981; --orange:#F59E0B; --red:#EF4444;
+      --bg:#0A0E1A; --card:#111827; --border:#1F2937;
+      --text:#F9FAFB; --muted:#9CA3AF;
+    }
+    html,body { height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow:hidden; }
+
+    #progress-bar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple)); transition:width .4s ease; z-index:999; }
+
+    #slides { width:100%; height:100vh; position:relative; }
+    .slide { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:50px 80px; opacity:0; transform:translateX(60px); transition:opacity .5s ease,transform .5s ease; pointer-events:none; }
+    .slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+    .slide.exit   { opacity:0; transform:translateX(-60px); }
+
+    #nav { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:16px; background:rgba(17,24,39,.95); border:1px solid var(--border); border-radius:50px; padding:10px 24px; backdrop-filter:blur(12px); z-index:100; }
+    #nav button { background:none; border:none; color:var(--text); font-size:22px; cursor:pointer; padding:4px 10px; border-radius:8px; transition:background .2s; }
+    #nav button:hover { background:var(--border); }
+    #nav button:disabled { opacity:.3; cursor:not-allowed; }
+    #slide-counter { color:var(--muted); font-size:14px; min-width:56px; text-align:center; }
+
+    #dots { position:fixed; right:28px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:8px; z-index:100; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s,transform .2s; }
+    .dot.active { background:var(--blue); transform:scale(1.5); }
+
+    .bg-glow { position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none; z-index:0; }
+    .slide-content { position:relative; z-index:1; width:100%; max-width:1100px; }
+
+    .tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:16px; }
+    .tag-blue  { background:rgba(59,130,246,.15); color:var(--blue);   border:1px solid rgba(59,130,246,.3); }
+    .tag-cyan  { background:rgba(6,182,212,.15);  color:var(--cyan);   border:1px solid rgba(6,182,212,.3); }
+    .tag-purple{ background:rgba(139,92,246,.15); color:var(--purple); border:1px solid rgba(139,92,246,.3); }
+    .tag-green { background:rgba(16,185,129,.15); color:var(--green);  border:1px solid rgba(16,185,129,.3); }
+    .tag-orange{ background:rgba(245,158,11,.15); color:var(--orange); border:1px solid rgba(245,158,11,.3); }
+
+    h1 { font-size:clamp(28px,4.5vw,56px); font-weight:900; line-height:1.1; }
+    h2 { font-size:clamp(22px,3vw,38px); font-weight:800; }
+    h3 { font-size:clamp(14px,1.8vw,20px); font-weight:700; }
+    p  { color:var(--muted); line-height:1.7; font-size:14px; }
+
+    .gradient-text        { background:linear-gradient(135deg,var(--blue),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .gradient-text-purple { background:linear-gradient(135deg,var(--purple),var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .gradient-text-green  { background:linear-gradient(135deg,var(--green),var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .gradient-text-orange { background:linear-gradient(135deg,var(--orange),var(--red)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    .card-blue   { border-color:rgba(59,130,246,.3); box-shadow:0 0 30px rgba(59,130,246,.07); }
+    .card-green  { border-color:rgba(16,185,129,.3); box-shadow:0 0 30px rgba(16,185,129,.07); }
+    .card-purple { border-color:rgba(139,92,246,.3); box-shadow:0 0 30px rgba(139,92,246,.07); }
+    .card-orange { border-color:rgba(245,158,11,.3); box-shadow:0 0 30px rgba(245,158,11,.07); }
+
+    .badge { display:inline-block; padding:2px 9px; border-radius:6px; font-size:11px; font-weight:700; }
+    .badge-green  { background:rgba(16,185,129,.2); color:var(--green); }
+    .badge-blue   { background:rgba(59,130,246,.2);  color:var(--blue); }
+    .badge-orange { background:rgba(245,158,11,.2); color:var(--orange); }
+    .badge-red    { background:rgba(239,68,68,.2);   color:var(--red); }
+    .badge-purple { background:rgba(139,92,246,.2); color:var(--purple); }
+    .badge-cyan   { background:rgba(6,182,212,.2);  color:var(--cyan); }
+
+    .sdot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; }
+    .sdot.green  { background:var(--green);  box-shadow:0 0 7px var(--green);  animation:blink 2s infinite; }
+    .sdot.orange { background:var(--orange); box-shadow:0 0 7px var(--orange); animation:blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; }
+
+    code { font-family:'Fira Code',monospace; font-size:12px; background:rgba(0,0,0,.35); padding:2px 8px; border-radius:6px; }
+
+    /* PARTICLES */
+    .particles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+    .particle { position:absolute; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--cyan)); opacity:.12; animation:floatp linear infinite; }
+    @keyframes floatp { 0%{transform:translateY(100vh) scale(0);opacity:0} 10%{opacity:.12} 90%{opacity:.12} 100%{transform:translateY(-20vh) scale(1);opacity:0} }
+
+    /* ── S1 COVER ── */
+    #s1 { text-align:center; }
+    .logo-bar { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:28px; }
+    .logo-icon { width:60px; height:60px; border-radius:18px; background:linear-gradient(135deg,var(--blue),var(--cyan)); display:flex; align-items:center; justify-content:center; font-size:30px; box-shadow:0 0 40px rgba(59,130,246,.4); }
+    .divider-h { width:60px; height:3px; background:linear-gradient(90deg,var(--blue),var(--cyan)); border-radius:2px; margin:20px auto; }
+    .meta-box { display:inline-flex; flex-direction:column; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 36px; margin-top:12px; }
+    .meta-row { display:flex; gap:12px; align-items:center; font-size:13px; }
+    .meta-label { color:var(--muted); min-width:90px; text-align:right; }
+    .meta-val   { font-weight:700; }
+
+    /* ── S2 LATAR ── */
+    .problem-item { display:flex; align-items:flex-start; gap:16px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 20px; margin-bottom:12px; transition:border-color .25s; }
+    .problem-item:hover { border-color:rgba(59,130,246,.4); }
+    .problem-num { font-size:26px; font-weight:900; color:rgba(255,255,255,.08); min-width:36px; line-height:1; }
+
+    /* ── S4 ARCH ── */
+    .arch-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center; transition:transform .25s,border-color .25s; }
+    .arch-card:hover { transform:translateY(-4px); }
+    .arch-emoji { font-size:28px; display:block; margin-bottom:6px; }
+    .arch-name  { font-size:12px; font-weight:700; margin-bottom:4px; }
+    .arch-port  { font-size:11px; color:var(--muted); font-family:'Fira Code',monospace; }
+
+    /* ── S6 PIPELINE ── */
+    .pipeline { display:flex; border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-top:20px; }
+    .pipe-step { flex:1; padding:20px 12px; text-align:center; border-right:1px solid var(--border); }
+    .pipe-step:last-child { border-right:none; }
+    .pipe-step:hover { background:rgba(255,255,255,.02); }
+    .pipe-icon  { font-size:28px; margin-bottom:8px; }
+    .pipe-title { font-size:12px; font-weight:700; margin-bottom:4px; }
+    .pipe-desc  { font-size:11px; color:var(--muted); line-height:1.5; }
+
+    /* ── S7 NGINX TABLE ── */
+    .rtable { width:100%; border-collapse:collapse; margin-top:16px; }
+    .rtable th { background:rgba(59,130,246,.1); color:var(--blue); font-size:11px; letter-spacing:1px; text-transform:uppercase; padding:12px 18px; text-align:left; border-bottom:1px solid var(--border); }
+    .rtable td { padding:13px 18px; border-bottom:1px solid rgba(31,41,55,.5); font-size:13px; }
+    .rtable tr:hover td { background:rgba(255,255,255,.02); }
+
+    /* ── S8 TARGETS ── */
+    .target-row { display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 20px; margin-bottom:10px; }
+    .target-left { display:flex; align-items:center; gap:12px; }
+    .target-icon { font-size:22px; }
+    .target-name { font-weight:700; font-size:14px; }
+    .target-url  { font-size:11px; color:var(--muted); font-family:'Fira Code',monospace; }
+
+    /* ── S9 GRAFANA METRICS ── */
+    .metric-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 14px; text-align:center; }
+    .metric-icon { font-size:26px; }
+    .metric-val  { font-size:28px; font-weight:900; margin:6px 0 4px; }
+    .metric-lbl  { font-size:11px; color:var(--muted); line-height:1.4; }
+
+    /* ── S11 KENDALA ── */
+    .kendala-row { display:grid; grid-template-columns:1fr 36px 1fr; gap:10px; align-items:center; margin-bottom:12px; }
+    .k-box { background:rgba(239,68,68,.07); border:1px solid rgba(239,68,68,.2); border-radius:12px; padding:12px 16px; }
+    .s-box { background:rgba(16,185,129,.07); border:1px solid rgba(16,185,129,.2); border-radius:12px; padding:12px 16px; }
+    .k-lbl { font-size:10px; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+    .k-lbl.err { color:var(--red); }
+    .k-lbl.sol { color:var(--green); }
+    .k-txt { font-size:12px; font-weight:600; line-height:1.4; }
+    .k-arrow { text-align:center; color:var(--muted); font-size:18px; }
+
+    /* ── S12 PENUTUP ── */
+    #s12 { text-align:center; }
+    .thanks-icon { width:80px; height:80px; border-radius:22px; margin:0 auto 20px; background:linear-gradient(135deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:center; font-size:40px; box-shadow:0 0 60px rgba(59,130,246,.4); }
+    .c-point { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:11px 16px; text-align:left; font-size:13px; margin-bottom:8px; max-width:600px; margin-left:auto; margin-right:auto; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="slides">
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 1 — COVER
+═══════════════════════════════════════════ -->
+<section class="slide active" id="s1">
+  <div class="particles" id="particles"></div>
+  <div class="bg-glow" style="width:480px;height:480px;background:radial-gradient(var(--blue),transparent);top:-100px;left:-80px;opacity:.14;"></div>
+  <div class="bg-glow" style="width:380px;height:380px;background:radial-gradient(var(--purple),transparent);bottom:-80px;right:-60px;opacity:.1;"></div>
+  <div class="slide-content">
+    <div class="logo-bar">
+      <div class="logo-icon">🏛️</div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;">Politeknik Negeri Jember</div>
+        <div style="font-size:15px;font-weight:800;">Teknik Informatika</div>
+      </div>
+    </div>
+    <div class="tag tag-blue">🔧 Workshop Developer Operational</div>
+    <h1 style="margin-top:8px;">
+      Implementasi <span class="gradient-text">DevOps</span><br/>
+      pada Sistem Informasi Parkir
+    </h1>
+    <div class="divider-h"></div>
+    <p style="max-width:520px;margin:0 auto 24px;text-align:center;">
+      Penerapan praktik DevOps menggunakan Docker, CI/CD GitHub Actions,
+      dan sistem monitoring Prometheus + Grafana pada VPS production.
+    </p>
+    <div class="meta-box">
+      <div class="meta-row"><span class="meta-label">Nama</span><span class="meta-val">Ranove Farrel Cavalera</span></div>
+      <div class="meta-row"><span class="meta-label">NIM</span><span class="meta-val">E41232061</span></div>
+      <div class="meta-row"><span class="meta-label">Dosen</span><span class="meta-val">Bu Arvita</span></div>
+      <div class="meta-row"><span class="meta-label">Tahun</span><span class="meta-val">2025 / 2026</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 2 — LATAR BELAKANG
+═══════════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div class="bg-glow" style="width:360px;height:360px;background:radial-gradient(var(--orange),transparent);top:50%;left:-80px;transform:translateY(-50%);opacity:.08;"></div>
+  <div class="slide-content">
+    <div class="tag tag-orange">📌 Latar Belakang</div>
+    <h2>Mengapa <span class="gradient-text">DevOps</span> Dibutuhkan?</h2>
+    <p style="margin:8px 0 20px;">Permasalahan umum dalam pengembangan sistem parkir konvensional:</p>
+    <div class="problem-item">
+      <div class="problem-num">01</div>
+      <div><h3>Deployment Manual &amp; Rawan Error</h3><p>Proses deploy dilakukan secara manual sehingga memakan waktu dan berisiko terjadi inkonsistensi konfigurasi antar environment pengembangan dan produksi.</p></div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">02</div>
+      <div><h3>Tidak Ada Monitoring Real-Time</h3><p>Tidak tersedia sistem pemantauan performa server (CPU, RAM, Disk, Network) sehingga sulit mendeteksi bottleneck atau kegagalan layanan sejak dini.</p></div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-num">03</div>
+      <div><h3>Aplikasi Tidak Terisolasi</h3><p>Tanpa containerisasi, dependency antar komponen dapat konflik dan menyebabkan sistem tidak stabil atau sulit direplikasi di lingkungan produksi.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 3 — TUJUAN
+═══════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="bg-glow" style="width:400px;height:400px;background:radial-gradient(var(--green),transparent);top:-80px;right:-80px;opacity:.09;"></div>
+  <div class="slide-content">
+    <div class="tag tag-green">🎯 Tujuan</div>
+    <h2>Target <span class="gradient-text-green">Implementasi</span></h2>
+    <p style="margin:8px 0 20px;">Empat tujuan utama yang dicapai dalam proyek DevOps ini:</p>
+    <div class="grid-2" style="gap:14px;">
+      <div class="card card-blue">
+        <div style="font-size:28px;margin-bottom:10px;">🐳</div>
+        <h3>Containerisasi Penuh</h3>
+        <p style="margin-top:6px;">Seluruh komponen (DB, Backend, Frontend, Monitoring) dikemas dalam Docker container yang terisolasi dan reproducible di environment manapun.</p>
+      </div>
+      <div class="card card-green">
+        <div style="font-size:28px;margin-bottom:10px;">⚡</div>
+        <h3>Otomasi CI/CD</h3>
+        <p style="margin-top:6px;">Setiap push ke branch main secara otomatis men-trigger pipeline GitHub Actions untuk build dan deploy ke VPS production tanpa intervensi manual.</p>
+      </div>
+      <div class="card card-purple">
+        <div style="font-size:28px;margin-bottom:10px;">📊</div>
+        <h3>Monitoring Real-Time</h3>
+        <p style="margin-top:6px;">Prometheus mengumpulkan metrics dari semua service. Grafana menampilkan dashboard visualisasi performa server secara live dan interaktif.</p>
+      </div>
+      <div class="card card-orange">
+        <div style="font-size:28px;margin-bottom:10px;">🔒</div>
+        <h3>Akses Terpusat via Nginx</h3>
+        <p style="margin-top:6px;">Nginx sebagai reverse proxy merutekan semua trafik melalui port 80, menghindari keterbatasan firewall VPS dan menyederhanakan akses publik.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 4 — ARSITEKTUR
+═══════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div class="bg-glow" style="width:500px;height:500px;background:radial-gradient(var(--cyan),transparent);bottom:-120px;left:50%;transform:translateX(-50%);opacity:.06;"></div>
+  <div class="slide-content">
+    <div class="tag tag-cyan">🏗️ Arsitektur</div>
+    <h2>Infrastruktur <span class="gradient-text">7 Container</span> Docker</h2>
+    <p style="margin:6px 0 16px;">Semua service berjalan dalam Docker network <code>si_parkir_net</code> di VPS Ubuntu 22.04.</p>
+    <div class="grid-4" style="margin-bottom:14px;">
+      <div class="arch-card" style="border-color:rgba(239,68,68,.35);"><span class="arch-emoji">🗄️</span><div class="arch-name">MySQL 8.0</div><div class="arch-port">:3306</div><div style="margin-top:7px;"><span class="badge badge-red">Database</span></div></div>
+      <div class="arch-card" style="border-color:rgba(59,130,246,.35);"><span class="arch-emoji">⚡</span><div class="arch-name">FastAPI Backend</div><div class="arch-port">:8000</div><div style="margin-top:7px;"><span class="badge badge-blue">Python API</span></div></div>
+      <div class="arch-card" style="border-color:rgba(16,185,129,.35);"><span class="arch-emoji">🌐</span><div class="arch-name">React + Nginx</div><div class="arch-port">:80</div><div style="margin-top:7px;"><span class="badge badge-green">Frontend</span></div></div>
+      <div class="arch-card" style="border-color:rgba(245,158,11,.35);"><span class="arch-emoji">🔥</span><div class="arch-name">Prometheus</div><div class="arch-port">:9090</div><div style="margin-top:7px;"><span class="badge badge-orange">Monitoring</span></div></div>
+      <div class="arch-card" style="border-color:rgba(245,158,11,.35);"><span class="arch-emoji">📊</span><div class="arch-name">Grafana</div><div class="arch-port">:3000</div><div style="margin-top:7px;"><span class="badge badge-orange">Dashboard</span></div></div>
+      <div class="arch-card" style="border-color:rgba(139,92,246,.35);"><span class="arch-emoji">🖥️</span><div class="arch-name">Node Exporter</div><div class="arch-port">:9100</div><div style="margin-top:7px;"><span class="badge badge-purple">VPS Metrics</span></div></div>
+      <div class="arch-card" style="border-color:rgba(6,182,212,.35);"><span class="arch-emoji">📦</span><div class="arch-name">cAdvisor</div><div class="arch-port">:8080</div><div style="margin-top:7px;"><span class="badge badge-cyan">Container</span></div></div>
+      <div class="arch-card" style="border-color:rgba(59,130,246,.5);box-shadow:0 0 20px rgba(59,130,246,.1);"><span class="arch-emoji">🌍</span><div class="arch-name">Internet</div><div class="arch-port" style="color:var(--blue);">Port 80 only</div><div style="margin-top:7px;"><span class="badge badge-blue">Entry Point</span></div></div>
+    </div>
+    <div class="card card-blue" style="padding:14px 20px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;">
+        <span style="font-weight:700;color:var(--muted);">Flow:</span>
+        <span>🌍 User</span><span style="color:var(--muted);">→</span>
+        <span style="color:var(--blue);font-weight:700;">Nginx :80</span><span style="color:var(--muted);">→</span>
+        <span><code>/</code> React</span><span style="color:var(--muted);">|</span>
+        <span><code>/api/</code> Backend</span><span style="color:var(--muted);">|</span>
+        <span><code>/grafana/</code> Grafana</span><span style="color:var(--muted);">|</span>
+        <span><code>/prometheus/</code> Prometheus</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 5 — DOCKERISASI
+═══════════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="slide-content">
+    <div class="tag tag-blue">🐳 Dockerisasi</div>
+    <h2>Docker <span class="gradient-text">Compose</span> &amp; Containerisasi</h2>
+    <div class="grid-2" style="margin-top:16px;gap:20px;">
+      <div>
+        <h3 style="color:var(--cyan);margin-bottom:10px;">📁 Struktur Layanan</h3>
+        <div style="background:#0D1117;border:1px solid #30363D;border-radius:12px;padding:18px 22px;font-family:'Fira Code',monospace;font-size:12px;line-height:2;">
+          <span style="color:#FF7B72;">services</span>:<br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">db</span>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#8B949E;"># MySQL 8.0</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;image: <span style="color:#A5D6FF;">mysql:8.0</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;healthcheck: <span style="color:#79C0FF;">✓</span><br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">backend</span>:&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#8B949E;"># FastAPI Python</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;build: <span style="color:#A5D6FF;">./backend</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;depends_on: <span style="color:#79C0FF;">db</span><br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">frontend</span>:&nbsp;&nbsp;&nbsp;<span style="color:#8B949E;"># React + Nginx</span><br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;ports: <span style="color:#79C0FF;">"80:80"</span><br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">prometheus</span>: <span style="color:#8B949E;"># + grafana</span><br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">node-exporter</span>: <span style="color:#8B949E;"># VPS</span><br/>
+          &nbsp;&nbsp;<span style="color:#D2A8FF;">cadvisor</span>: <span style="color:#8B949E;"># Container</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card card-blue" style="padding:14px 18px;">
+          <h3 style="font-size:13px;margin-bottom:6px;">🔧 Environment Variables</h3>
+          <p style="font-size:12px;">Semua konfigurasi sensitif (DB password, Secret Key, JWT) dikelola via file <code>.env</code> yang di-exclude dari Git.</p>
+        </div>
+        <div class="card card-green" style="padding:14px 18px;">
+          <h3 style="font-size:13px;margin-bottom:6px;">💾 Persistent Volumes</h3>
+          <p style="font-size:12px;">Data MySQL dan Grafana tersimpan di Docker volume — tidak hilang saat container di-restart atau di-rebuild.</p>
+        </div>
+        <div class="card card-purple" style="padding:14px 18px;">
+          <h3 style="font-size:13px;margin-bottom:6px;">🌐 Isolated Network</h3>
+          <p style="font-size:12px;">Semua container dalam <code>si_parkir_net</code>. Service berkomunikasi via nama container, bukan IP dinamis.</p>
+        </div>
+        <div class="card card-orange" style="padding:14px 18px;">
+          <h3 style="font-size:13px;margin-bottom:6px;">🔄 Auto Restart</h3>
+          <p style="font-size:12px;">Semua service dikonfigurasi <code>restart: always</code> untuk recovery otomatis jika terjadi crash atau reboot VPS.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 6 — CI/CD PIPELINE
+═══════════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div class="bg-glow" style="width:420px;height:420px;background:radial-gradient(var(--purple),transparent);top:50%;right:-100px;transform:translateY(-50%);opacity:.1;"></div>
+  <div class="slide-content">
+    <div class="tag tag-purple">⚡ CI/CD Pipeline</div>
+    <h2>GitHub Actions <span class="gradient-text-purple">Auto Deploy</span></h2>
+    <p style="margin:6px 0 0;">Pipeline otomatis yang berjalan setiap kali ada push ke branch <code>main</code>.</p>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-icon">📝</div><div class="pipe-title">Push Code</div><div class="pipe-desc">Developer push ke branch main di GitHub</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🔔</div><div class="pipe-title">Trigger</div><div class="pipe-desc">GitHub Actions workflow aktif otomatis</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🔐</div><div class="pipe-title">SSH Connect</div><div class="pipe-desc">Actions SSH ke VPS via secret credentials</div></div>
+      <div class="pipe-step"><div class="pipe-icon">📥</div><div class="pipe-title">Git Pull</div><div class="pipe-desc">Pull kode terbaru dari repository</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🐳</div><div class="pipe-title">Docker Build</div><div class="pipe-desc">Build ulang image yang berubah saja</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🚀</div><div class="pipe-title">Live!</div><div class="pipe-desc">Container baru running, zero downtime</div></div>
+    </div>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="card card-purple" style="padding:16px;">
+        <h3 style="font-size:13px;margin-bottom:10px;">🔑 GitHub Secrets</h3>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+          <div><span class="badge badge-purple">VPS_HOST</span>&nbsp;&nbsp;<span style="color:var(--muted);font-family:'Fira Code';">202.155.143.247</span></div>
+          <div><span class="badge badge-purple">VPS_USER</span>&nbsp;&nbsp;<span style="color:var(--muted);font-family:'Fira Code';">ubuntu</span></div>
+          <div><span class="badge badge-purple">VPS_PASSWORD</span>&nbsp;&nbsp;<span style="color:var(--muted);">••••••••</span></div>
+        </div>
+      </div>
+      <div class="card card-green" style="padding:16px;">
+        <h3 style="font-size:13px;margin-bottom:10px;">✅ Keuntungan CI/CD</h3>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);">
+          <li>✅ Zero manual deployment error</li>
+          <li>✅ Konsistensi environment</li>
+          <li>✅ Rollback mudah via Git revert</li>
+          <li>✅ Audit trail lengkap di GitHub</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 7 — NGINX
+═══════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div class="slide-content">
+    <div class="tag tag-cyan">🌐 Reverse Proxy</div>
+    <h2>Nginx <span class="gradient-text">Routing</span> Configuration</h2>
+    <p style="margin:6px 0 0;">Semua akses publik melalui Nginx port 80 — menghindari blokir firewall VPS.</p>
+    <table class="rtable">
+      <thead><tr><th>URL Path</th><th>Upstream Service</th><th>Port</th><th>Fungsi</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>React SPA (static files)</td><td><span class="badge badge-green">:80</span></td><td>Halaman utama aplikasi parkir</td></tr>
+        <tr><td><code>/api/</code></td><td><code>backend:8000</code></td><td><span class="badge badge-blue">:8000</span></td><td>REST API + WebSocket FastAPI</td></tr>
+        <tr><td><code>/api/camera/ws</code></td><td><code>backend:8000/camera/ws</code></td><td><span class="badge badge-blue">:8000</span></td><td>WebSocket stream kamera YOLO</td></tr>
+        <tr><td><code>/grafana/</code></td><td><code>grafana:3000</code></td><td><span class="badge badge-orange">:3000</span></td><td>Dashboard monitoring Grafana</td></tr>
+        <tr><td><code>/prometheus/</code></td><td><code>prometheus:9090</code></td><td><span class="badge badge-orange">:9090</span></td><td>UI &amp; API Prometheus</td></tr>
+      </tbody>
+    </table>
+    <div class="card card-blue" style="margin-top:16px;padding:16px;">
+      <h3 style="font-size:13px;margin-bottom:6px;">💡 Kenapa Semua Harus Lewat Port 80?</h3>
+      <p style="font-size:12px;">VPS hanya membuka port 22 (SSH) dan 80 (HTTP). Port 3000, 8000, 9090 tidak bisa diakses dari internet. Nginx menjadi <strong style="color:var(--text);">single entry point</strong> yang mendistribusikan setiap request ke service yang tepat berdasarkan path URL.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 8 — PROMETHEUS
+═══════════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="bg-glow" style="width:450px;height:450px;background:radial-gradient(var(--orange),transparent);top:50%;left:50%;transform:translate(-50%,-50%);opacity:.05;"></div>
+  <div class="slide-content">
+    <div class="tag tag-orange">🔥 Monitoring</div>
+    <h2>Prometheus <span class="gradient-text-orange">Scrape Targets</span></h2>
+    <p style="margin:6px 0 16px;">Prometheus mengumpulkan metrics dari 4 target secara otomatis setiap <strong style="color:var(--text);">15 detik</strong>.</p>
+    <div class="target-row" style="border-color:rgba(16,185,129,.3);">
+      <div class="target-left"><div class="target-icon">🖥️</div><div><div class="target-name">node-exporter</div><div class="target-url">http://node-exporter:9100/metrics</div></div></div>
+      <div><span class="sdot green"></span><span class="badge badge-green">UP</span><div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;">CPU · RAM · Disk · Network</div></div>
+    </div>
+    <div class="target-row" style="border-color:rgba(16,185,129,.3);">
+      <div class="target-left"><div class="target-icon">📦</div><div><div class="target-name">cadvisor</div><div class="target-url">http://cadvisor:8080/metrics</div></div></div>
+      <div><span class="sdot green"></span><span class="badge badge-green">UP</span><div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;">Container resource usage</div></div>
+    </div>
+    <div class="target-row" style="border-color:rgba(16,185,129,.3);">
+      <div class="target-left"><div class="target-icon">⚡</div><div><div class="target-name">backend (FastAPI)</div><div class="target-url">http://backend:8000/metrics</div></div></div>
+      <div><span class="sdot green"></span><span class="badge badge-green">UP</span><div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;">HTTP requests · latency</div></div>
+    </div>
+    <div class="target-row" style="border-color:rgba(16,185,129,.3);">
+      <div class="target-left"><div class="target-icon">🔥</div><div><div class="target-name">prometheus (self)</div><div class="target-url">http://localhost:9090/prometheus/metrics</div></div></div>
+      <div><span class="sdot green"></span><span class="badge badge-green">UP</span><div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;">Self-monitoring</div></div>
+    </div>
+    <div class="card card-orange" style="margin-top:14px;padding:14px 18px;">
+      <p style="font-size:12px;">Data tersimpan di volume <code>prometheus_data</code> dengan retensi <strong style="color:var(--text);">30 hari</strong>. Akses UI: <code style="color:var(--orange);">http://202.155.143.247/prometheus/targets</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 9 — GRAFANA
+═══════════════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div class="bg-glow" style="width:400px;height:400px;background:radial-gradient(var(--orange),transparent);bottom:-80px;right:-60px;opacity:.09;"></div>
+  <div class="slide-content">
+    <div class="tag tag-orange">📊 Dashboard</div>
+    <h2>Grafana <span class="gradient-text-orange">Live Monitoring</span></h2>
+    <p style="margin:6px 0 16px;">Dashboard <strong style="color:var(--text);">Node Exporter Full</strong> (ID: 1860) memantau kondisi VPS secara real-time dari browser.</p>
+    <div class="grid-3" style="gap:12px;">
+      <div class="metric-card" style="border-color:rgba(59,130,246,.3);"><div class="metric-icon">⚙️</div><div class="metric-val" style="color:var(--blue);">CPU</div><div class="metric-lbl">Usage per Core<br/>Load Avg 1/5/15m</div></div>
+      <div class="metric-card" style="border-color:rgba(16,185,129,.3);"><div class="metric-icon">💾</div><div class="metric-val" style="color:var(--green);">RAM</div><div class="metric-lbl">Used / Total<br/>Swap Usage</div></div>
+      <div class="metric-card" style="border-color:rgba(245,158,11,.3);"><div class="metric-icon">💿</div><div class="metric-val" style="color:var(--orange);">Disk</div><div class="metric-lbl">Space Used / Free<br/>I/O Read &amp; Write</div></div>
+      <div class="metric-card" style="border-color:rgba(139,92,246,.3);"><div class="metric-icon">📡</div><div class="metric-val" style="color:var(--purple);">Network</div><div class="metric-lbl">Upload / Download<br/>Bandwidth</div></div>
+      <div class="metric-card" style="border-color:rgba(6,182,212,.3);"><div class="metric-icon">🐳</div><div class="metric-val" style="color:var(--cyan);">Container</div><div class="metric-lbl">Per-container CPU &amp; RAM<br/>via cAdvisor</div></div>
+      <div class="metric-card" style="border-color:rgba(59,130,246,.3);"><div class="metric-icon">🌐</div><div class="metric-val" style="color:var(--blue);">API</div><div class="metric-lbl">HTTP Requests<br/>Response Latency</div></div>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="font-size:12px;color:var(--muted);">Akses dashboard → </span>
+      <code style="color:var(--orange);">http://202.155.143.247/grafana/</code>
+      <span style="margin:0 10px;color:var(--muted);">·</span>
+      <span style="font-size:12px;color:var(--muted);">Login: </span>
+      <code>admin / admin123</code>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 10 — HASIL PENGUJIAN
+═══════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="slide-content">
+    <div class="tag tag-green">✅ Hasil Pengujian</div>
+    <h2>Semua Service <span class="gradient-text-green">Berjalan Normal</span></h2>
+    <p style="margin:6px 0 16px;">Verifikasi deployment di VPS production <strong style="color:var(--text);">202.155.143.247</strong></p>
+    <div class="grid-2" style="gap:12px;">
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">🗄️</span>
+        <div><div style="font-weight:700;font-size:14px;">MySQL Database <span class="badge badge-green" style="margin-left:6px;">Healthy</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Data parkir tersimpan, healthcheck pass</div></div>
+      </div>
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">⚡</span>
+        <div><div style="font-weight:700;font-size:14px;">FastAPI Backend <span class="badge badge-green" style="margin-left:6px;">Running</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">REST API + WebSocket + /metrics endpoint</div></div>
+      </div>
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">🌐</span>
+        <div><div style="font-weight:700;font-size:14px;">React Frontend <span class="badge badge-green" style="margin-left:6px;">Running</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Aplikasi SI Parkir dapat diakses via port 80</div></div>
+      </div>
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">🔥</span>
+        <div><div style="font-weight:700;font-size:14px;">Prometheus <span class="badge badge-green" style="margin-left:6px;">4/4 UP</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Semua target (backend, node, cadvisor) UP</div></div>
+      </div>
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">📊</span>
+        <div><div style="font-weight:700;font-size:14px;">Grafana Dashboard <span class="badge badge-green" style="margin-left:6px;">Data Live</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Visualisasi real-time tampil di browser</div></div>
+      </div>
+      <div class="card card-green" style="display:flex;align-items:center;gap:14px;padding:16px;">
+        <span style="font-size:26px;">⚙️</span>
+        <div><div style="font-weight:700;font-size:14px;">CI/CD Pipeline <span class="badge badge-green" style="margin-left:6px;">Active</span></div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Auto deploy via GitHub Actions berjalan</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 11 — KENDALA & SOLUSI
+═══════════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div class="slide-content">
+    <div class="tag tag-blue">🔧 Kendala &amp; Solusi</div>
+    <h2>Tantangan dalam <span class="gradient-text">Implementasi</span></h2>
+    <div style="margin-top:16px;">
+      <div class="kendala-row">
+        <div class="k-box"><div class="k-lbl err">❌ Kendala</div><div class="k-txt">Bcrypt crash di Python 3.11 — library passlib tidak kompatibel dengan bcrypt versi baru</div></div>
+        <div class="k-arrow">→</div>
+        <div class="s-box"><div class="k-lbl sol">✅ Solusi</div><div class="k-txt">Migrasi dari passlib ke library bcrypt native langsung tanpa wrapper abstraksi</div></div>
+      </div>
+      <div class="kendala-row">
+        <div class="k-box"><div class="k-lbl err">❌ Kendala</div><div class="k-txt">Port 3000, 8000, 9090 diblokir firewall VPS — monitoring tidak bisa diakses publik</div></div>
+        <div class="k-arrow">→</div>
+        <div class="s-box"><div class="k-lbl sol">✅ Solusi</div><div class="k-txt">Nginx reverse proxy merutekan semua akses melalui port 80 dengan sub-path routing</div></div>
+      </div>
+      <div class="kendala-row">
+        <div class="k-box"><div class="k-lbl err">❌ Kendala</div><div class="k-txt">Grafana "No Data" — datasource URL tidak menggunakan subpath <code>/prometheus</code></div></div>
+        <div class="k-arrow">→</div>
+        <div class="s-box"><div class="k-lbl sol">✅ Solusi</div><div class="k-txt">Update datasource ke <code>http://prometheus:9090/prometheus</code> sesuai external-url config</div></div>
+      </div>
+      <div class="kendala-row">
+        <div class="k-box"><div class="k-lbl err">❌ Kendala</div><div class="k-txt">WebSocket URL crash di browser karena hardcoded URL tidak berfungsi di VPS</div></div>
+        <div class="k-arrow">→</div>
+        <div class="s-box"><div class="k-lbl sol">✅ Solusi</div><div class="k-txt">URL dibangun dinamis menggunakan <code>window.location.host</code> di React</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 12 — PENUTUP
+═══════════════════════════════════════════ -->
+<section class="slide" id="s12">
+  <div class="bg-glow" style="width:500px;height:500px;background:radial-gradient(var(--blue),transparent);top:50%;left:50%;transform:translate(-50%,-50%);opacity:.07;"></div>
+  <div class="slide-content">
+    <div class="thanks-icon">🚀</div>
+    <div class="tag tag-blue" style="display:inline-flex;margin-bottom:14px;">🎯 Kesimpulan</div>
+    <h2 style="margin-bottom:10px;">Implementasi <span class="gradient-text">DevOps</span> Berhasil!</h2>
+    <p style="max-width:580px;margin:0 auto 20px;">Seluruh komponen DevOps berhasil diimplementasikan dan berjalan di VPS production dengan pendekatan modern dan best practice industri.</p>
+    <div class="c-point"><span>🐳</span><span>Aplikasi sepenuhnya di-containerisasi dalam 7 Docker container yang terisolasi dan reproducible</span></div>
+    <div class="c-point"><span>⚡</span><span>CI/CD pipeline otomatis via GitHub Actions menghilangkan proses deploy manual yang rawan error</span></div>
+    <div class="c-point"><span>📊</span><span>Monitoring real-time Prometheus + Grafana memberikan visibilitas penuh ke kondisi server &amp; aplikasi</span></div>
+    <div class="c-point"><span>🌐</span><span>Nginx reverse proxy memastikan semua service dapat diakses secara aman melalui satu entry point</span></div>
+    <div style="margin-top:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Aplikasi</div><code style="color:var(--blue);">http://202.155.143.247</code></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Grafana</div><code style="color:var(--orange);">/grafana/</code></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Repository</div><code style="color:var(--green);">github.com/Ranove7/si_pakir_web</code></div>
+    </div>
+    <div style="margin-top:20px;padding:14px 20px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:12px;font-size:13px;color:var(--muted);text-align:center;">
+      🙏 Terima kasih kepada <strong style="color:var(--text);">Bu Arvita</strong> atas bimbingan dalam mata kuliah <strong style="color:var(--text);">Workshop Developer Operational</strong>
+    </div>
+  </div>
+</section>
+
+</div><!-- /#slides -->
+
+<div id="nav">
+  <button id="btn-prev" onclick="changeSlide(-1)" disabled>‹</button>
+  <span id="slide-counter">1 / 12</span>
+  <button id="btn-next" onclick="changeSlide(1)">›</button>
+</div>
+<div id="dots"></div>
+
+<script>
+  const TOTAL = 12;
+  let cur = 0;
+
+  const dotsEl = document.getElementById('dots');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function goTo(n) {
+    const from = document.getElementById('s'+(cur+1));
+    from.classList.remove('active'); from.classList.add('exit');
+    setTimeout(() => from.classList.remove('exit'), 500);
+    cur = n;
+    const to = document.getElementById('s'+(cur+1));
+    to.classList.add('active');
+    document.getElementById('slide-counter').textContent = (cur+1)+' / '+TOTAL;
+    document.getElementById('btn-prev').disabled = cur===0;
+    document.getElementById('btn-next').disabled = cur===TOTAL-1;
+    document.getElementById('progress-bar').style.width = ((cur+1)/TOTAL*100)+'%';
+    document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===cur));
+  }
+
+  function changeSlide(dir) {
+    const n = cur+dir;
+    if (n>=0 && n<TOTAL) goTo(n);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','ArrowDown',' '].includes(e.key)) { e.preventDefault(); changeSlide(1); }
+    if (['ArrowLeft','ArrowUp'].includes(e.key)) { e.preventDefault(); changeSlide(-1); }
+  });
+
+  // Particles for cover
+  function mkParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const s = Math.random()*8+4, l = Math.random()*100, d = Math.random()*8+6, dl = Math.random()*4;
+    p.style.cssText = `width:${s}px;height:${s}px;left:${l}%;animation-duration:${d}s;animation-delay:${dl}s;`;
+    document.getElementById('particles').appendChild(p);
+    setTimeout(() => p.remove(), (d+dl)*1000);
+  }
+  setInterval(mkParticle, 700);
+  for (let i=0;i<10;i++) mkParticle();
+
+  document.getElementById('progress-bar').style.width = (1/TOTAL*100)+'%';
+</script>
+</body>
+</html>

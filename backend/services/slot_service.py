@@ -14,3 +14,11 @@ def get_all_slots():
     slots = session.query(SlotModel).all()
     session.close()
     return slots
+
+def reset_all_slots_to_empty():
+    session = SessionLocal()
+    slots = session.query(SlotModel).all()
+    for slot in slots:
+        slot.status = 'kosong'
+    session.commit()
+    session.close()

@@ -14,3 +14,12 @@ def read_slots():
         }
         for s in slots
     ]
+
+@router.get("/reset")
+def reset_slots():
+    from services.slot_service import reset_all_slots_to_empty
+    try:
+        reset_all_slots_to_empty()
+        return {"status": "success", "message": "Semua slot berhasil diubah menjadi kosong"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
