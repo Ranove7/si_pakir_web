@@ -23,3 +23,14 @@ def reset_slots():
         return {"status": "success", "message": "Semua slot berhasil diubah menjadi kosong"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/set/{kode}/{status}")
+def set_slot_status(kode: str, status: str):
+    if status not in ['kosong', 'terisi']:
+        return {"status": "error", "message": "Status harus 'kosong' atau 'terisi'"}
+    from services.slot_service import update_slot_status
+    try:
+        update_slot_status(kode, status)
+        return {"status": "success", "message": f"Slot {kode} berhasil diubah menjadi {status}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
