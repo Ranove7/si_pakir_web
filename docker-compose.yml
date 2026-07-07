@@ -33,6 +33,7 @@ services:
       PMA_HOST: db
       PMA_PORT: 3306
       UPLOAD_LIMIT: 300M
+      PMA_ABSOLUTE_URI: /phpmyadmin/
     ports:
       - "8085:80"
     depends_on:
