@@ -25,6 +25,22 @@ services:
       timeout: 20s
       retries: 10
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: si_parkir_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 300M
+    ports:
+      - "8085:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - si_parkir_net
+
   # =====================
   # BACKEND (FastAPI)
   # =====================
